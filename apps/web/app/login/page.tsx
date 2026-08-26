@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import { LoginForm } from "@/components/LoginForm";
 
@@ -14,7 +15,9 @@ export default function LoginPage() {
         <div className="brandStack" aria-hidden="true"><i /><i /><i /><i /></div>
       </section>
       <section className="loginPanel">
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </section>
     </main>
   );

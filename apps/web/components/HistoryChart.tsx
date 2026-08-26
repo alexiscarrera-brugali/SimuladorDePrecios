@@ -51,7 +51,7 @@ export function HistoryChart({ productCode, priceListCode }: { productCode: stri
     setData(null);
     setError(false);
     const params = new URLSearchParams({ price_list: priceListCode });
-    fetch(`/api/backend/products/${encodeURIComponent(productCode)}/history?${params}`)
+    fetch(`/api/products/${encodeURIComponent(productCode)}/history?${params}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response)))
       .then((json: HistoryResult) => active && setData(json))
       .catch(() => active && setError(true));

@@ -11,6 +11,7 @@ import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIs
 import type { SimulationPayload } from "@/lib/contracts";
 import { formatMoney, formatPercent } from "@/lib/simulation";
 import { warningLabels } from "@/lib/labels";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { SimulatorPanel } from "./SimulatorPanel";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -44,7 +45,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
     setLoading(true); setError("");
     const params = new URLSearchParams({ date: queryDate, price_list: selectedList });
     if (status) params.set("status", status);
-    const response = await fetch(`/api/backend/analysis?${params}`);
+    const response = await fetch(`/api/analysis?${params}`);
     const data = await response.json();
     setLoading(false);
     if (!response.ok) return setError(data.detail ?? "No pudimos consultar el análisis");
@@ -52,7 +53,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   }, [queryDate, selectedList, status]);
 
   const loadIssues = useCallback(async () => {
-    const response = await fetch("/api/backend/quality/issues");
+    const response = await fetch("/api/quality/issues");
     if (response.ok) setIssues(await response.json());
   }, []);
 
@@ -60,12 +61,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   useEffect(() => { if (activeView === "issues") void loadIssues(); }, [activeView, loadIssues]);
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await createSupabaseBrowserClient().auth.signOut();
     window.location.href = "/login";
   }
 
   async function refreshLists() {
-    const response = await fetch("/api/backend/price-lists");
+    const response = await fetch("/api/price-lists");
     if (response.ok) {
       const nextLists: PriceList[] = await response.json();
       setLists(nextLists); setSelectedList(nextLists[0]?.code ?? ""); setActiveView("analysis");
@@ -73,7 +74,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   }
 
   async function exportWorkbook() {
-    const response = await fetch("/api/backend/exports", {
+    const response = await fetch("/api/exports", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query_date: queryDate, price_list_code: selectedList, simulations }),
     });
@@ -158,8 +159,27 @@ function IssuesView({ issues }: { issues: QualityIssue[]; loading: boolean }) {
 
 function ImportView({ onCommitted }: { onCommitted: () => Promise<void> }) {
   const [preview, setPreview] = useState<PreviewResult | null>(null); const [file, setFile] = useState<File | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
-  async function inspect() { if (!file) return; setBusy(true); setError(""); const body = new FormData(); body.append("file", file); const response = await fetch("/api/backend/imports/preview", { method: "POST", body }); const data = await response.json(); setBusy(false); if (!response.ok) return setError(data.detail ?? "No se pudo leer el archivo"); setPreview(data); }
-  async function commit() { if (!preview) return; setBusy(true); const response = await fetch(`/api/backend/imports/${preview.preview_id}/commit`, { method: "POST" }); const data = await response.json(); setBusy(false); if (!response.ok) return setError(data.detail ?? "No se pudo confirmar el lote"); await onCommitted(); }
+  async function inspect() {
+    if (!file) return;
+    setBusy(true); setError("");
+    try {
+      const signed = await fetch("/api/imports/sign-upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name }) });
+      const signedData = await signed.json();
+      if (!signed.ok) throw new Error(signedData.detail ?? "No se pudo preparar la subida");
+      const supabase = createSupabaseBrowserClient();
+      const upload = await supabase.storage.from(signedData.bucket).uploadToSignedUrl(signedData.path, signedData.token, file);
+      if (upload.error) throw new Error("No se pudo subir el archivo");
+      const response = await fetch("/api/imports/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: signedData.path }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail ?? "No se pudo leer el archivo");
+      setPreview(data);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function commit() { if (!preview) return; setBusy(true); const response = await fetch("/api/imports/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: preview.path }) }); const data = await response.json(); setBusy(false); if (!response.ok) return setError(data.detail ?? "No se pudo confirmar el lote"); await onCommitted(); }
   return <section className="importPage"><div className="importIntro"><span className="eyebrow">Carga controlada</span><h2>Primero revisamos.<br />Después confirmamos.</h2><p>La planilla sigue siendo la fuente. El sistema valida su estructura y explica los problemas antes de incorporarla al análisis.</p><ol><li><span>01</span>Seleccionar archivo</li><li><span>02</span>Revisar observaciones</li><li><span>03</span>Confirmar lote</li></ol></div><div className="uploadCard">{!preview ? <><div className="dropVisual"><FileSpreadsheet /><i /></div><label className="filePicker"><input type="file" accept=".xlsx" onChange={event => setFile(event.target.files?.[0] ?? null)} /><span>{file ? file.name : "Elegir archivo .xlsx"}</span><Upload /></label><p>Máximo 25 MB. El archivo no se modifica.</p><button className="primaryButton" disabled={!file || busy} onClick={inspect}>{busy ? "Analizando…" : "Crear vista previa"}<ChevronRight /></button></> : <PreviewCard preview={preview} busy={busy} onCommit={commit} onReset={() => { setPreview(null); setFile(null); }} />}{error && <div className="formError">{error}</div>}</div></section>;
 }
 

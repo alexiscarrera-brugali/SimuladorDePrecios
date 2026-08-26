@@ -47,11 +47,12 @@ export interface QualityIssue {
 }
 
 export interface PreviewResult {
-  preview_id: string;
+  path: string;
   filename: string;
   sha256: string;
   summary: Record<string, number>;
   issues: QualityIssue[];
+  issues_total?: number;
 }
 
 export interface HistoryResult {

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { loginSchema } from "@/lib/contracts";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,11 +17,11 @@ export function LoginForm() {
     const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
     if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Revisá los datos");
     setLoading(true);
-    const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data) });
-    const data = await response.json();
+    const supabase = createSupabaseBrowserClient();
+    const { error: authError } = await supabase.auth.signInWithPassword(parsed.data);
     setLoading(false);
-    if (!response.ok) return setError(data.detail ?? "No pudimos iniciar la sesión");
-    router.replace("/");
+    if (authError) return setError("Correo o contraseña inválidos");
+    router.replace(params.get("redirect") || "/");
     router.refresh();
   }
 
@@ -33,8 +35,7 @@ export function LoginForm() {
       <label>Contraseña<input name="password" type="password" autoComplete="current-password" required /></label>
       {error && <div className="formError" role="alert">{error}</div>}
       <button className="primaryButton" disabled={loading}>{loading ? "Ingresando…" : "Continuar"}<ArrowRight size={18} /></button>
-      <small>Entorno local de validación · No publicado en Internet</small>
+      <small>Acceso corporativo · Acciones registradas</small>
     </form>
   );
 }
-

@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/supabase/session";
 import { downloadWorkbook } from "@/lib/data/imports";
 import { parseWorkbook } from "@/lib/engine/importer";
+import { issueToJSON, summaryToJSON } from "@/lib/serialize";
 import { importPathSchema } from "@/lib/schemas";
 import { fail, handler, json } from "@/lib/http";
 
@@ -19,11 +20,11 @@ export const POST = handler(async (request: NextRequest) => {
     const workbook = await parseWorkbook(buffer);
     return json({
       path: parsed.data.path,
+      filename: parsed.data.path.replace(/^[0-9a-f-]+-/, ""),
       sha256: workbook.sha256,
-      summary: workbook.summary,
-      priceLists: workbook.priceLists,
-      issues: workbook.issues.slice(0, PREVIEW_ISSUE_LIMIT),
-      issuesTotal: workbook.issues.length,
+      summary: summaryToJSON(workbook.summary),
+      issues: workbook.issues.slice(0, PREVIEW_ISSUE_LIMIT).map(issueToJSON),
+      issues_total: workbook.issues.length,
     });
   } catch (error) {
     return fail(`No se pudo leer la planilla: ${(error as Error).message}`, 422);

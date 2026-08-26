@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/session";
 import { getAnalysisData, getLatestBatchId, getPriceListByCode } from "@/lib/data/repo";
 import { analyze } from "@/lib/engine/analysis";
+import { analysisToJSON } from "@/lib/serialize";
 import { fail, handler, json } from "@/lib/http";
 
 export const GET = handler(async (request: NextRequest) => {
@@ -19,5 +20,5 @@ export const GET = handler(async (request: NextRequest) => {
 
   const priceList = await getPriceListByCode(supabase, priceListCode);
   const data = await getAnalysisData(supabase, batchId, priceListCode);
-  return json(analyze({ queryDate, priceList, ...data }));
+  return json(analysisToJSON(analyze({ queryDate, priceList, ...data })));
 });

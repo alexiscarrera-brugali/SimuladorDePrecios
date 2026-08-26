@@ -115,7 +115,7 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
       return;
     }
     setSaving(true);
-    const response = await fetch("/api/backend/simulations/save", {
+    const response = await fetch("/api/simulations/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
