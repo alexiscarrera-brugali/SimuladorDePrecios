@@ -1,0 +1,35 @@
+# Secretos y entorno
+.env
+.env.*
+!.env.example
+
+# Datos locales, importaciones y exportaciones (fuera de Git)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+apps/api/.venv/
+**/*.egg-info/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Next.js
+**/node_modules/
+apps/web/.next/
+apps/web/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Artefactos de entregables (pesados, no son código del MVP)
+outputs/
+work/
+
+# Sistema
+.DS_Store
+Thumbs.db

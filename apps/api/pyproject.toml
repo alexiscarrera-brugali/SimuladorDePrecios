@@ -1,0 +1,35 @@
+[project]
+name = "brugali-costos-api"
+version = "0.1.0"
+description = "API del tablero de costos y precios de Brugali"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.14,<2",
+  "email-validator>=2,<3",
+  "fastapi>=0.115,<1",
+  "openpyxl>=3.1,<4",
+  "pydantic-settings>=2.7,<3",
+  "PyJWT>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "SQLAlchemy>=2.0,<3",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.28,<1", "pytest>=8.3,<9", "pytest-cov>=6,<7", "ruff>=0.9,<1"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E4/E7/E9 + F (defaults) más isort (I) y bugbear (B), sin E501 para no penalizar
+# líneas largas legibles del scaffold.
+select = ["E4", "E7", "E9", "F", "I", "B"]
+# B008: FastAPI usa llamadas (Depends/Query/File) en valores por defecto a propósito.
+ignore = ["B008"]
+
