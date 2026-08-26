@@ -17,6 +17,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "decimal.js": "latest",
+    "exceljs": "^4.4.0",
     "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
