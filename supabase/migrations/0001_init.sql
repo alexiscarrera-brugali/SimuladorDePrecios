@@ -222,3 +222,10 @@ create policy read_audit_admin on public.audit_events
 -- Nota: no se definen políticas de INSERT/UPDATE/DELETE para clientes.
 -- Con RLS activo y sin política permisiva, toda escritura vía JWT de
 -- usuario queda denegada; el backend escribe con service-role.
+
+-- ---- Storage: bucket privado para las planillas importadas ----
+-- La subida es por URL firmada y la descarga por service-role (backend);
+-- no se necesitan políticas públicas de Storage.
+insert into storage.buckets (id, name, public)
+values ('imports', 'imports', false)
+on conflict (id) do nothing;
