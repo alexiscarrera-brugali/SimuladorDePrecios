@@ -1,4 +1,3 @@
-// Helpers de respuesta JSON y manejo de errores para Route Handlers.
 import { NextResponse } from "next/server";
 
 export function json<T>(data: T, status = 200) {
@@ -15,14 +14,18 @@ export class HttpError extends Error {
   }
 }
 
-/** Envuelve un handler para traducir HttpError y errores inesperados a JSON. */
 export function handler<Args extends unknown[]>(fn: (...args: Args) => Promise<Response>) {
   return async (...args: Args): Promise<Response> => {
     try {
       return await fn(...args);
     } catch (error) {
-      if (error instanceof HttpError) return fail(error.message, error.status);
-      console.error("Unhandled route error:", error);
+      if (error instanceof HttpError && error.status < 500) {
+        return fail(error.message, error.status);
+      }
+      console.error("Server route failed", {
+        kind: error instanceof Error ? error.name : "UnknownError",
+        status: error instanceof HttpError ? error.status : 500,
+      });
       return fail("Error interno del servidor", 500);
     }
   };

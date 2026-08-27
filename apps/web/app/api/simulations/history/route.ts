@@ -1,6 +1,6 @@
-import { requireUser } from "@/lib/supabase/session";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { fail, handler, json } from "@/lib/http";
+import { requireUser } from "@/lib/server/supabase/session";
+import { createSupabaseAdminClient } from "@/lib/server/supabase/admin";
+import { fail, handler, json } from "@/lib/server/http";
 
 export const GET = handler(async () => {
   await requireUser();

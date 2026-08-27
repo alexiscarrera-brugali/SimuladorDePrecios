@@ -1,13 +1,12 @@
-// Cliente Supabase para Server Components y Route Handlers.
-// Usa el JWT del usuario (cookies) → sujeto a RLS.
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { publicEnv } from "@/lib/config/public-env";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    publicEnv.supabaseUrl,
+    publicEnv.supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -19,7 +18,7 @@ export async function createSupabaseServerClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Invocado desde un Server Component: el middleware refresca la sesión.
+            // Los Server Components no pueden escribir cookies; proxy.ts renueva la sesión.
           }
         },
       },

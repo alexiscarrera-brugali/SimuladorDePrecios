@@ -1,13 +1,5 @@
--- ============================================================
--- Brugali · Costos y precios — esquema inicial y seguridad (RLS)
--- Stack: Supabase (Postgres + Auth). Precisión NUMERIC(20,8).
--- Modelo de acceso: los clientes (navegador/JWT de usuario) solo LEEN
--- según RLS; toda ESCRITURA pasa por el backend con service-role
--- (que omite RLS) previa verificación de rol. service-role nunca va
--- al navegador.
--- ============================================================
-
--- ---- Perfiles y roles --------------------------------------
+-- Los clientes autenticados leen mediante RLS; las escrituras privilegiadas
+-- se realizan únicamente en Route Handlers después de validar el rol.
 
 create type public.app_role as enum ('admin_importer', 'functional', 'tester');
 
@@ -62,7 +54,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ---- Datos de negocio --------------------------------------
+-- Datos de negocio
 
 create table public.import_batches (
   id          uuid primary key default gen_random_uuid(),
@@ -172,9 +164,7 @@ create table public.audit_events (
 );
 create index audit_events_action_idx on public.audit_events (action, occurred_at desc);
 
--- ============================================================
 -- Row Level Security
--- ============================================================
 
 alter table public.profiles           enable row level security;
 alter table public.import_batches      enable row level security;
@@ -223,7 +213,7 @@ create policy read_audit_admin on public.audit_events
 -- Con RLS activo y sin política permisiva, toda escritura vía JWT de
 -- usuario queda denegada; el backend escribe con service-role.
 
--- ---- Storage: bucket privado para las planillas importadas ----
+-- Bucket privado para las planillas importadas.
 -- La subida es por URL firmada y la descarga por service-role (backend);
 -- no se necesitan políticas públicas de Storage.
 insert into storage.buckets (id, name, public)

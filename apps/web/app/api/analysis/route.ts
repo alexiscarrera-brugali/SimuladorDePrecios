@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/session";
-import { getAnalysisData, getLatestBatchId, getPriceListByCode } from "@/lib/data/repo";
-import { analyze } from "@/lib/engine/analysis";
-import { analysisToJSON } from "@/lib/serialize";
-import { fail, handler, json } from "@/lib/http";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { requireUser } from "@/lib/server/supabase/session";
+import { getAnalysisData, getLatestBatchId, getPriceListByCode } from "@/lib/server/data/repo";
+import { analyze } from "@/lib/domain/analysis";
+import { analysisToJSON } from "@/lib/server/serialize";
+import { fail, handler, json } from "@/lib/server/http";
 
 export const GET = handler(async (request: NextRequest) => {
   await requireUser();

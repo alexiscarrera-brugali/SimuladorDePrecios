@@ -1,5 +1,5 @@
-// Esquemas de validación de entrada de la API.
 import { z } from "zod";
+import { isAllowedXlsxMime, XLSX_MAX_BYTES } from "@/lib/config/upload";
 
 export const driverSchema = z.enum(["price", "gain_amount", "gain_percent"]);
 
@@ -23,9 +23,21 @@ export const exportSchema = z.object({
 });
 
 export const signUploadSchema = z.object({
-  filename: z.string().min(1).max(255),
+  filename: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .regex(/^[^/\\]+\.xlsx$/i, "El archivo debe ser un .xlsx válido"),
+  size: z.number().int().positive().max(XLSX_MAX_BYTES),
+  contentType: z.string().refine(isAllowedXlsxMime, "Tipo de archivo no permitido"),
 });
 
 export const importPathSchema = z.object({
-  path: z.string().min(1),
+  path: z
+    .string()
+    .regex(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-[\w.-]+\.xlsx$/i,
+      "Ruta de importación inválida",
+    ),
 });

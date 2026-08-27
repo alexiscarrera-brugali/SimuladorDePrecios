@@ -1,6 +1,6 @@
 // Sesión y autorización por rol para Route Handlers y Server Components.
 import { createSupabaseServerClient } from "./server";
-import { HttpError } from "@/lib/http";
+import { HttpError } from "@/lib/server/http";
 
 export type AppRole = "admin_importer" | "functional" | "tester";
 

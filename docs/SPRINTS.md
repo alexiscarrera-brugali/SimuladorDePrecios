@@ -1,65 +1,28 @@
-# Plan de sprints — Herramienta corporativa de costos y precios
+# Estado de implementación
 
-**Stack cerrado:** Next.js (Vercel) + Supabase (Postgres, Auth, Storage). Cómputo de
-negocio en TypeScript sobre Route Handlers/Server Actions. Sin FastAPI.
+## Base completada
 
-**Modo de entrega:** todo listo-para-deploy y verificado localmente; la creación del
-proyecto Supabase y el deploy a Vercel se hacen juntos en un *gate* acordado.
+- Arquitectura Next.js + Supabase.
+- Motor comercial TypeScript con aritmética decimal.
+- Migraciones, RLS, autenticación y roles.
+- Importación con URL firmada, preview y confirmación.
+- Análisis, observaciones, simulador, histórico y exportación analítica.
 
-**Reglas comerciales:** bloqueadas por `AGENTS.md` (% sobre costo, sin redondeo,
-conflicto bloquea solo su fila, `varios` ambiguo, etc.). Precisión `NUMERIC(20,8)`.
+## Recuperación de despliegue
 
----
+- [x] Normalizar `apps/web` dentro del repositorio.
+- [x] Versionar la capa de acceso a datos que estaba ignorada.
+- [x] Alinear estructura y documentación con la arquitectura vigente.
+- [ ] Completar typecheck, lint, Vitest y build de producción.
+- [ ] Vincular el proyecto Vercel existente y configurar sus variables.
+- [ ] Validar Preview Deployment.
+- [ ] Completar aceptación con Tomás Garzón y conciliación con Sofía Masera.
 
-## Estado de sprints
+## Posterior al MVP
 
-### Sprint 0 — Fundaciones y motor (en curso)
-- [x] Resolver disco (artefactos pesados a E: vía junction; C: liberado).
-- [x] Decidir arquitectura (Next.js + Supabase) y modo de deploy (gate).
-- [ ] Dependencias del nuevo stack (@supabase/ssr, supabase-js, vitest).
-- [ ] Portar el motor comercial a TypeScript con pruebas (vitest) equivalentes a los 39 tests de pytest.
-- [ ] Clientes Supabase (server, browser, admin service-role solo backend).
-- [ ] Migraciones Supabase: esquema normalizado + RLS + funciones.
-- [ ] Auth con Supabase (login, middleware de sesión, roles).
-- [ ] Retirar FastAPI una vez el motor TS alcanza paridad y verde.
-- [ ] CI (typecheck + lint + vitest + escaneo de secretos).
+- Integración automática con TOTVS.
+- Formato de actualización aprobado para TOTVS.
+- Flujo de aprobaciones, alertas y monitoreo operativo.
+- Pruebas de carga y observabilidad productiva.
 
-### Sprint 1 — Datos & calidad
-- [ ] Pipeline de importación: subida a Storage con URL firmada → parse → preview → commit idempotente.
-- [ ] Detección de calidad (ceros, vacíos, inactivos/desconocidos, duplicados).
-- [ ] **Reconciliación 329 vs 7**: cuadrar nuestra detección de conflictos con la evidencia documentada (DUP-01…07 en BD_LP; verificar aporte de SB1/sucursal/lista).
-- [ ] Auditoría de importaciones (lote, huella SHA-256, responsable, conteos).
-
-### Sprint 2 — Motor de consulta
-- [ ] Vigencias (mayor ≤ fecha) para precio (sucursal+lista+producto) y costo (sucursal+producto).
-- [ ] Margen, objetivo y estados como autoridad de servidor.
-- [ ] Pruebas de vigencia (antes/en/después) y estados.
-
-### Sprint 3 — Análisis & Observaciones
-- [ ] Tabla por lista/fecha, filtros de estado, búsqueda.
-- [ ] Vista de observaciones (calidad) trazable a filas de origen.
-
-### Sprint 4 — Simulador
-- [ ] Doble vía (precio / ganancia $ / ganancia %) con aritmética decimal.
-- [ ] Histórico escalonado (sin interpolación) y termómetro.
-- [ ] Accesibilidad (Escape, foco, role=alert, deslizador + numérico).
-
-### Sprint 5 — Exportación & Auditoría
-- [ ] Excel/CSV con precisión, fórmulas neutralizadas, tres hojas.
-- [ ] Auditoría de simulaciones guardadas y exportaciones.
-
-### Sprint 6 — Seguridad & escala
-- [ ] RLS probada por rol; `service-role` solo en backend.
-- [ ] Headers de seguridad, rate limiting, validación server-side doble.
-- [ ] Observabilidad básica y prueba de volumen.
-
-### Sprint 7 — Deploy & aceptación
-- [ ] Gate de provisión: crear proyecto Supabase, aplicar migraciones, deploy a Vercel.
-- [ ] Recorrido de aceptación (Tomás/Sofía) y conciliación de muestra.
-- [ ] Documentación operativa y de entrega.
-
----
-
-## Definición de "hecho" por sprint
-Cada sprint cierra con: `typecheck` + `lint` + `vitest` en verde, un commit descriptivo,
-y evidencia del comportamiento (pruebas o recorrido). No se declara terminado sin eso.
+Cada corte se considera terminado solamente con controles locales en verde y un recorrido funcional verificable.

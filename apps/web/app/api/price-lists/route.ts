@@ -1,7 +1,7 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/session";
-import { getPriceLists } from "@/lib/data/repo";
-import { handler, json } from "@/lib/http";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { requireUser } from "@/lib/server/supabase/session";
+import { getPriceLists } from "@/lib/server/data/repo";
+import { handler, json } from "@/lib/server/http";
 
 export const GET = handler(async () => {
   await requireUser();

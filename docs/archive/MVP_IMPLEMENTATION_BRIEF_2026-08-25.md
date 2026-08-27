@@ -1,4 +1,6 @@
-# MVP de costos y precios · Brief de implementación
+# MVP de costos y precios · Brief histórico de implementación
+
+> Documento reemplazado por la arquitectura Next.js + Supabase. Se conserva como antecedente y no describe el sistema vigente.
 
 **Fecha:** 25 de agosto de 2026  
 **Decisión funcional:** Sofía Masera  
@@ -224,4 +226,3 @@ El primer corte vertical verificable debe alcanzarse en 18–24 horas de trabajo
 ```text
 Continuá la implementación del MVP de costos y precios de Brugali siguiendo AGENTS.md y docs/MVP_IMPLEMENTATION_BRIEF.md; empezá auditando el scaffold parcial y completá el corte carga → validación → análisis → simulación → exportación con pruebas, sin publicar servicios externos.
 ```
-

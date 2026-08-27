@@ -1,8 +1,4 @@
-/* ================================================================
-   Brugali · Costos y precios — sistema visual
-   Identidad editorial derivada del isotipo (piezas redondeadas
-   apiladas). Fondo marfil, tinta cálida, alta densidad de datos.
-   ================================================================ */
+/* Tokens y base */
 
 :root {
   --ink: #1d1d1b;
@@ -105,7 +101,7 @@ a {
   margin-bottom: 8px;
 }
 
-/* ---- Botones --------------------------------------------------- */
+/* Botones */
 
 .primaryButton {
   display: inline-flex;
@@ -199,9 +195,7 @@ a {
   }
 }
 
-/* ================================================================
-   Login
-   ================================================================ */
+/* Login */
 
 .loginPage {
   min-height: 100vh;
@@ -332,9 +326,7 @@ a {
   font-size: 12px;
 }
 
-/* ================================================================
-   App shell
-   ================================================================ */
+/* Estructura principal */
 
 .appShell {
   display: grid;
@@ -543,7 +535,7 @@ a {
   color: inherit;
 }
 
-/* ---- Filtros --------------------------------------------------- */
+/* Filtros */
 
 .filterBar {
   display: flex;
@@ -581,7 +573,7 @@ a {
   opacity: 0.55;
 }
 
-/* ---- Métricas -------------------------------------------------- */
+/* Métricas */
 
 .metricGrid {
   display: grid;
@@ -634,7 +626,7 @@ a {
 .metric.red strong { color: var(--red); }
 .metric.orange strong { color: var(--orange); }
 
-/* ---- Tabla ----------------------------------------------------- */
+/* Tabla */
 
 .tableCard {
   background: var(--surface);
@@ -833,9 +825,7 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   color: var(--muted);
 }
 
-/* ================================================================
-   Observaciones
-   ================================================================ */
+/* Observaciones */
 
 .issuesPage {
   padding: 22px 32px 40px;
@@ -956,9 +946,7 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   color: var(--muted-strong);
 }
 
-/* ================================================================
-   Importación
-   ================================================================ */
+/* Importación */
 
 .importPage {
   display: grid;
@@ -1114,9 +1102,7 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   gap: 10px;
 }
 
-/* ================================================================
-   Simulador
-   ================================================================ */
+/* Simulador */
 
 .simulatorOverlay {
   position: fixed;
@@ -1457,7 +1443,7 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   padding-top: 16px;
 }
 
-/* ---- Histórico ------------------------------------------------- */
+/* Histórico */
 
 .historyChart {
   margin: 10px 0 0;
@@ -1509,9 +1495,7 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   padding: 12px 0;
 }
 
-/* ================================================================
-   Responsive
-   ================================================================ */
+/* Adaptación responsive */
 
 @media (max-width: 1080px) {
   .metricGrid { grid-template-columns: repeat(2, 1fr); }

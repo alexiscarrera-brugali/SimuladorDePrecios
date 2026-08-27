@@ -1,6 +1,6 @@
 // Serialización del motor (camelCase) al contrato JSON de la UI (snake_case).
-import type { AnalysisResponse } from "@/lib/engine/analysis";
-import type { ParsedIssue, ParsedWorkbook } from "@/lib/engine/importer";
+import type { AnalysisResponse } from "@/lib/domain/analysis";
+import type { ParsedIssue, ParsedWorkbook } from "@/lib/domain/importer";
 
 export function issueToJSON(issue: ParsedIssue) {
   return {

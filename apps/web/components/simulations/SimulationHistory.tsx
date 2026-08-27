@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import type { SavedSimulation } from "@/lib/types";
 import { formatMoney, formatPercent } from "@/lib/simulation";
@@ -26,20 +26,25 @@ export function SimulationHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/simulations/history");
-    if (!res.ok) {
+    try {
+      const res = await fetch("/api/simulations/history");
+      if (!res.ok) throw new Error("request_failed");
+      setRows(await res.json());
+    } catch {
       setError("No se pudo cargar el historial de simulaciones.");
+    } finally {
       setLoading(false);
-      return;
     }
-    setRows(await res.json());
-    setLoading(false);
-  }
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   return (
     <section className="historyPage">

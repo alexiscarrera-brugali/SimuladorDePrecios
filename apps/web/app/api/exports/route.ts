@@ -1,14 +1,17 @@
 import type { NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { requireUser } from "@/lib/supabase/session";
-import { getAnalysisData, getLatestBatchId, getPriceListByCode } from "@/lib/data/repo";
-import { recordAudit } from "@/lib/data/audit";
-import { analyze } from "@/lib/engine/analysis";
-import { buildExportWorkbook, type SimulationExportInput } from "@/lib/engine/exports";
-import type { ParsedIssue, Severity } from "@/lib/engine/importer";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/server/supabase/admin";
+import { requireUser } from "@/lib/server/supabase/session";
+import { getAnalysisData, getLatestBatchId, getPriceListByCode } from "@/lib/server/data/repo";
+import { recordAudit } from "@/lib/server/data/audit";
+import { analyze } from "@/lib/domain/analysis";
+import { buildExportWorkbook, type SimulationExportInput } from "@/lib/domain/exports";
+import type { ParsedIssue, Severity } from "@/lib/domain/importer";
 import { exportSchema } from "@/lib/schemas";
-import { fail, handler } from "@/lib/http";
+import { fail, handler } from "@/lib/server/http";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export const POST = handler(async (request: NextRequest) => {
   const user = await requireUser();

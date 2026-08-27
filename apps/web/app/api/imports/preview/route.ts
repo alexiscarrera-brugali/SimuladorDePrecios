@@ -1,13 +1,16 @@
 import type { NextRequest } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { requireRole } from "@/lib/supabase/session";
-import { downloadWorkbook } from "@/lib/data/imports";
-import { parseWorkbook } from "@/lib/engine/importer";
-import { issueToJSON, summaryToJSON } from "@/lib/serialize";
+import { createSupabaseAdminClient } from "@/lib/server/supabase/admin";
+import { requireRole } from "@/lib/server/supabase/session";
+import { downloadWorkbook } from "@/lib/server/data/imports";
+import { parseWorkbook } from "@/lib/domain/importer";
+import { issueToJSON, summaryToJSON } from "@/lib/server/serialize";
 import { importPathSchema } from "@/lib/schemas";
-import { fail, handler, json } from "@/lib/http";
+import { fail, handler, json } from "@/lib/server/http";
 
 const PREVIEW_ISSUE_LIMIT = 200;
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export const POST = handler(async (request: NextRequest) => {
   await requireRole("admin_importer");

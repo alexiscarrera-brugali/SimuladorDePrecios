@@ -1,7 +1,7 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/session";
-import { getLatestBatchId } from "@/lib/data/repo";
-import { handler, json, HttpError } from "@/lib/http";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { requireUser } from "@/lib/server/supabase/session";
+import { getLatestBatchId } from "@/lib/server/data/repo";
+import { handler, json, HttpError } from "@/lib/server/http";
 
 export const GET = handler(async () => {
   await requireUser();

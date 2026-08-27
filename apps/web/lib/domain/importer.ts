@@ -69,7 +69,7 @@ export interface ParsedWorkbook {
   };
 }
 
-// ---- Normalizadores (fieles a Python) --------------------------------
+// Normalización de valores de origen.
 
 export function normalizeCode(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -135,7 +135,7 @@ export function productStatus(value: unknown): SourceStatus {
   return "unknown";
 }
 
-// ---- Lectura de celdas ExcelJS ---------------------------------------
+// Lectura segura de celdas ExcelJS.
 
 function cellValue(raw: unknown): unknown {
   if (raw === null || raw === undefined) return null;
@@ -180,7 +180,7 @@ function readSheet(ws: ExcelJS.Worksheet): SheetData {
   return { headers, headerIndex, rows };
 }
 
-// ---- Parser principal -------------------------------------------------
+// Parser de las hojas requeridas.
 
 export async function parseWorkbook(data: ArrayBuffer | Buffer): Promise<ParsedWorkbook> {
   const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
@@ -310,7 +310,7 @@ export async function parseWorkbook(data: ArrayBuffer | Buffer): Promise<ParsedW
   return { sha256, priceLists, prices, costs, margins, issues, summary };
 }
 
-// ---- Detección de calidad --------------------------------------------
+// Detección de problemas de calidad.
 
 type AnyRecord = PriceRecord | CostRecord;
 

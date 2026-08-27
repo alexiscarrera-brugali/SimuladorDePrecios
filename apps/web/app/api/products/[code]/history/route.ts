@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/session";
-import { getHistory, getLatestBatchId } from "@/lib/data/repo";
-import { fail, handler, json } from "@/lib/http";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { requireUser } from "@/lib/server/supabase/session";
+import { getHistory, getLatestBatchId } from "@/lib/server/data/repo";
+import { fail, handler, json } from "@/lib/server/http";
 
 export const GET = handler(async (request: NextRequest, ctx: { params: Promise<{ code: string }> }) => {
   await requireUser();

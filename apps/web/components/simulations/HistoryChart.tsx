@@ -43,22 +43,30 @@ function steppedSegments(points: Point[], x: (i: number) => number, y: (v: numbe
 }
 
 export function HistoryChart({ productCode, priceListCode }: { productCode: string; priceListCode: string }) {
-  const [data, setData] = useState<HistoryResult | null>(null);
-  const [error, setError] = useState(false);
+  const requestKey = `${productCode}:${priceListCode}`;
+  const [result, setResult] = useState<{
+    key: string;
+    data: HistoryResult | null;
+    error: boolean;
+  }>({ key: "", data: null, error: false });
+  const data = result.key === requestKey ? result.data : null;
+  const error = result.key === requestKey && result.error;
 
   useEffect(() => {
     let active = true;
-    setData(null);
-    setError(false);
     const params = new URLSearchParams({ price_list: priceListCode });
     fetch(`/api/products/${encodeURIComponent(productCode)}/history?${params}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response)))
-      .then((json: HistoryResult) => active && setData(json))
-      .catch(() => active && setError(true));
+      .then((json: HistoryResult) => {
+        if (active) setResult({ key: requestKey, data: json, error: false });
+      })
+      .catch(() => {
+        if (active) setResult({ key: requestKey, data: null, error: true });
+      });
     return () => {
       active = false;
     };
-  }, [productCode, priceListCode]);
+  }, [productCode, priceListCode, requestKey]);
 
   const chart = useMemo(() => {
     if (!data) return null;

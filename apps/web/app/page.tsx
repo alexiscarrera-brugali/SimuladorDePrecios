@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import type { PriceList } from "@/lib/types";
-import { getSessionUser } from "@/lib/supabase/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getPriceLists } from "@/lib/data/repo";
-import { Dashboard } from "@/components/Dashboard";
+import { getSessionUser } from "@/lib/server/supabase/session";
+import { createSupabaseServerClient } from "@/lib/server/supabase/server";
+import { getPriceLists } from "@/lib/server/data/repo";
+import { Dashboard } from "@/components/analysis/Dashboard";
 
 export const dynamic = "force-dynamic";
 

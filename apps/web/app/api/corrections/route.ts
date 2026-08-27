@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { requireUser } from "@/lib/supabase/session";
+import { createSupabaseAdminClient } from "@/lib/server/supabase/admin";
+import { requireUser } from "@/lib/server/supabase/session";
 import { correctionSchema } from "@/lib/contracts";
-import { fail, handler, json } from "@/lib/http";
+import { fail, handler, json } from "@/lib/server/http";
 
 export const POST = handler(async (request: NextRequest) => {
   const user = await requireUser();

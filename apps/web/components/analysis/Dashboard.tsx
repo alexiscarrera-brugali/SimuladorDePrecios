@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowDownToLine, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, ChevronUp,
@@ -11,9 +12,10 @@ import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIs
 import type { SimulationPayload } from "@/lib/contracts";
 import { formatMoney, formatPercent } from "@/lib/simulation";
 import { warningLabels } from "@/lib/labels";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { SimulatorPanel } from "./SimulatorPanel";
-import { SimulationHistory } from "./SimulationHistory";
+import { createSupabaseBrowserClient } from "@/lib/client/supabase";
+import { isAllowedXlsxMime, XLSX_MAX_BYTES } from "@/lib/config/upload";
+import { SimulatorPanel } from "@/components/simulations/SimulatorPanel";
+import { SimulationHistory } from "@/components/simulations/SimulationHistory";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -22,6 +24,7 @@ type SortField = "product" | "cost" | "price" | "ideal" | "margin";
 type SortDir = "asc" | "desc";
 
 export function Dashboard({ user, initialPriceLists }: { user: { name: string; role: string; email: string }; initialPriceLists: PriceList[] }) {
+  const router = useRouter();
   const [lists, setLists] = useState(initialPriceLists);
   const [selectedList, setSelectedList] = useState(initialPriceLists[0]?.code ?? "");
   const [queryDate, setQueryDate] = useState(today);
@@ -47,6 +50,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
 
   const loadAnalysis = useCallback(async () => {
     if (!selectedList) return;
+    await Promise.resolve();
     setLoading(true); setError("");
     const params = new URLSearchParams({ date: queryDate, price_list: selectedList });
     if (status) params.set("status", status);
@@ -58,16 +62,26 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   }, [queryDate, selectedList, status]);
 
   const loadIssues = useCallback(async () => {
+    await Promise.resolve();
     const response = await fetch("/api/quality/issues");
     if (response.ok) setIssues(await response.json());
   }, []);
 
-  useEffect(() => { if (activeView === "analysis") void loadAnalysis(); }, [activeView, loadAnalysis]);
-  useEffect(() => { if (activeView === "issues") void loadIssues(); }, [activeView, loadIssues]);
+  useEffect(() => {
+    if (activeView !== "analysis") return;
+    const timer = window.setTimeout(() => void loadAnalysis(), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeView, loadAnalysis]);
+  useEffect(() => {
+    if (activeView !== "issues") return;
+    const timer = window.setTimeout(() => void loadIssues(), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeView, loadIssues]);
 
   async function logout() {
     await createSupabaseBrowserClient().auth.signOut();
-    window.location.href = "/login";
+    router.replace("/login");
+    router.refresh();
   }
 
   async function refreshLists() {
@@ -358,7 +372,15 @@ function ImportView({ onCommitted }: { onCommitted: () => Promise<void> }) {
     if (!file) return;
     setBusy(true); setError("");
     try {
-      const signed = await fetch("/api/imports/sign-upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name }) });
+      const contentType = file.type || "application/octet-stream";
+      if (!file.name.toLowerCase().endsWith(".xlsx")) throw new Error("Seleccioná un archivo .xlsx válido");
+      if (file.size <= 0 || file.size > XLSX_MAX_BYTES) throw new Error("El archivo debe pesar entre 1 byte y 25 MB");
+      if (!isAllowedXlsxMime(contentType)) throw new Error("El tipo de archivo no está permitido");
+      const signed = await fetch("/api/imports/sign-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, size: file.size, contentType }),
+      });
       const signedData = await signed.json();
       if (!signed.ok) throw new Error(signedData.detail ?? "No se pudo preparar la subida");
       const supabase = createSupabaseBrowserClient();
@@ -412,7 +434,7 @@ function ImportView({ onCommitted }: { onCommitted: () => Promise<void> }) {
         ) : (
           <PreviewCard preview={preview} busy={busy} onCommit={commit} onReset={() => { setPreview(null); setFile(null); }} />
         )}
-        {error && <div className="formError">{error}</div>}
+        {error && <div className="formError" role="alert">{error}</div>}
       </div>
     </section>
   );
