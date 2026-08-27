@@ -62,3 +62,25 @@ export interface HistoryResult {
   costs: { date: string; value: string | null; source_row: number }[];
 }
 
+export interface SavedSimulation {
+  id: string;
+  product_code: string;
+  price_list_code: string;
+  query_date: string;
+  actor_email: string;
+  created_at: string;
+  original_cost: string | null;
+  original_ideal_percent: string | null;
+  driver: Driver;
+  driver_value: string;
+  simulated_price: string | null;
+  simulated_gain_amount: string | null;
+  simulated_gain_percent: string | null;
+  thermometer: "green" | "red" | "neutral";
+}
+
+export interface ManualCorrection {
+  field: "cost" | "ideal_percent";
+  original_value: string | null;
+  corrected_value: string | null;
+}

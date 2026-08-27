@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, LockKeyhole } from "lucide-react";
-import { loginSchema } from "@/lib/contracts";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
@@ -12,21 +10,33 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function submit(formData: FormData) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError("");
-    const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
-    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Revisá los datos");
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    if (!email || !password) return setError("Completá ambos campos");
     setLoading(true);
-    const supabase = createSupabaseBrowserClient();
-    const { error: authError } = await supabase.auth.signInWithPassword(parsed.data);
-    setLoading(false);
-    if (authError) return setError("Correo o contraseña inválidos");
-    router.replace(params.get("redirect") || "/");
-    router.refresh();
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      setLoading(false);
+      if (!res.ok) return setError(data.error || "Correo o contraseña inválidos");
+      router.replace(params.get("redirect") || "/");
+      router.refresh();
+    } catch {
+      setLoading(false);
+      setError("Error de conexión. Intentá de nuevo.");
+    }
   }
 
   return (
-    <form className="loginForm" action={submit}>
+    <form className="loginForm" onSubmit={submit}>
       <div className="loginIcon"><LockKeyhole size={22} /></div>
       <span className="eyebrow">Acceso privado</span>
       <h2>Ingresar al tablero</h2>

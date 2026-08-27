@@ -585,9 +585,12 @@ a {
 
 .metricGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 22px;
+}
+@media (max-width: 1280px) {
+  .metricGrid { grid-template-columns: repeat(3, 1fr); }
 }
 .metric {
   position: relative;
@@ -625,9 +628,11 @@ a {
 .metric.teal i { background: var(--teal); }
 .metric.yellow i { background: var(--yellow); }
 .metric.red i { background: var(--red); }
+.metric.orange i { background: var(--orange); }
 .metric.teal strong { color: var(--teal); }
 .metric.yellow strong { color: #b9860f; }
 .metric.red strong { color: var(--red); }
+.metric.orange strong { color: var(--orange); }
 
 /* ---- Tabla ----------------------------------------------------- */
 
@@ -669,6 +674,16 @@ a {
   font-family: inherit;
   min-width: 180px;
 }
+.clearSearch {
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+.clearSearch:hover { color: var(--ink); }
 
 .tableWrap {
   overflow-x: auto;
@@ -689,6 +704,20 @@ a {
   background: var(--surface-sunken);
   position: sticky;
   top: 0;
+}
+.tableWrap thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.tableWrap thead th.sortable:hover {
+  color: var(--ink);
+}
+.tableWrap thead th.sortable .sortIcon {
+  opacity: 0.35;
 }
 .tableWrap tbody tr {
   border-top: 1px solid var(--border);
@@ -745,6 +774,35 @@ a {
   text-align: center;
   color: var(--muted);
 }
+
+/* Margen por debajo del objetivo */
+.marginBelow {
+  color: var(--red);
+  font-weight: 600;
+}
+.marginBelowIcon {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+  color: var(--red);
+}
+
+/* Badge de simulación guardada */
+.simBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--teal-soft);
+  color: var(--teal);
+  border: 1px solid #b8ddd6;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+tr.hasSim { background: rgba(55, 155, 140, 0.04); }
 
 .emptyState {
   display: flex;
@@ -1293,6 +1351,100 @@ a {
   border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
+
+/* Campos editables en el simulador */
+.simContextField {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  transition: border-color 0.16s ease;
+}
+.simContextField.edited {
+  border-color: var(--teal);
+}
+.simContextField > span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.editableRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+.editableInput {
+  border: none;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  width: 100%;
+  padding: 0;
+  outline: none;
+}
+.editableInput:focus {
+  border-bottom: 2px solid var(--teal);
+}
+.resetBtn {
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 3px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.resetBtn:hover { color: var(--red); }
+.editedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.04em;
+}
+
+.correctionNote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--petrol-soft);
+  color: var(--petrol);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Historial de simulaciones */
+.historyPage {
+  padding: 22px 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.historyPageHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.historyPageHeader > div {
+  flex: 1;
+}
+.historyPageHeader h2 {
+  font-size: 22px;
+  margin: 4px 0 6px;
+}
+.historyPageHeader p {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .simActions {
   display: flex;
   justify-content: space-between;
@@ -1366,6 +1518,7 @@ a {
   .importPage { grid-template-columns: 1fr; }
   .loginPage { grid-template-columns: 1fr; }
   .loginStory { display: none; }
+  .historyPage { padding-left: 18px; padding-right: 18px; }
 }
 
 @media (max-width: 820px) {
@@ -1382,7 +1535,7 @@ a {
   .sidebar.open { transform: translateX(0); }
   .mobileClose { display: block; }
   .mobileMenu { display: inline-flex; }
-  .topbar, .filterBar, .content, .issuesPage, .importPage { padding-left: 18px; padding-right: 18px; }
+  .topbar, .filterBar, .content, .issuesPage, .importPage, .historyPage { padding-left: 18px; padding-right: 18px; }
   .simContext { grid-template-columns: 1fr; }
 }
 

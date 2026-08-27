@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ShieldAlert, ThermometerSun, X } from "lucide-react";
+import { AlertTriangle, Pencil, RotateCcw, ShieldAlert, X } from "lucide-react";
 import type { AnalysisRow, Driver } from "@/lib/types";
 import type { SimulationPayload } from "@/lib/contracts";
-import { simulationSchema } from "@/lib/contracts";
+import { correctionSchema, simulationSchema } from "@/lib/contracts";
 import { calculateSimulation, formatMoney, formatPercent } from "@/lib/simulation";
 import { explain } from "@/lib/labels";
 import { HistoryChart } from "./HistoryChart";
@@ -48,17 +48,57 @@ function defaultValue(driver: Driver, row: AnalysisRow, costNum: number, priceNu
   return row.price.value ?? String(priceNum);
 }
 
+function EditableField({
+  label, value, edited, original, onEdit, onReset, placeholder,
+}: {
+  label: string; value: string; edited: boolean; original: string | null;
+  onEdit: (v: string) => void; onReset: () => void; placeholder?: string;
+}) {
+  return (
+    <div className={`simContextField ${edited ? "edited" : ""}`}>
+      <span>{label}</span>
+      <div className="editableRow">
+        <input
+          type="number"
+          inputMode="decimal"
+          value={value}
+          placeholder={placeholder ?? "0"}
+          onChange={(e) => onEdit(e.target.value)}
+          className="editableInput"
+        />
+        {edited && (
+          <button className="resetBtn" onClick={onReset} title={`Restaurar original: ${original ?? "—"}`}>
+            <RotateCcw size={13} />
+          </button>
+        )}
+      </div>
+      {edited && <small className="editedBadge"><Pencil size={10} /> Editado</small>}
+    </div>
+  );
+}
+
 export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorPanelProps) {
-  const costNum = num(row.cost.value);
-  const priceNum = num(row.price.value);
   const blocked = row.simulation_blocked;
 
   const [driver, setDriver] = useState<Driver>("price");
-  const [driverValue, setDriverValue] = useState<string>(() => row.price.value ?? String(priceNum));
+  const [driverValue, setDriverValue] = useState<string>(() => row.price.value ?? "0");
   const [serverResult, setServerResult] = useState<ServerResult | null>(null);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Editable fields
+  const [editedCost, setEditedCost] = useState<string>(row.cost.value ?? "");
+  const [editedIdeal, setEditedIdeal] = useState<string>(row.ideal_percent ?? "");
+
+  const costEdited = editedCost !== (row.cost.value ?? "");
+  const idealEdited = editedIdeal !== (row.ideal_percent ?? "");
+
+  const effectiveCost = editedCost.trim() !== "" ? editedCost : row.cost.value;
+  const effectiveIdeal = editedIdeal.trim() !== "" ? editedIdeal : row.ideal_percent;
+
+  const costNum = num(effectiveCost);
+  const priceNum = num(row.price.value);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -77,13 +117,13 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
   const { sim, calcError } = useMemo(() => {
     try {
       return {
-        sim: calculateSimulation(row.cost.value, row.ideal_percent, driver, driverValue || "0", sourceWarnings),
+        sim: calculateSimulation(effectiveCost, effectiveIdeal, driver, driverValue || "0", sourceWarnings),
         calcError: "",
       };
     } catch (error) {
       return { sim: null, calcError: (error as Error).message };
     }
-  }, [row.cost.value, row.ideal_percent, driver, driverValue, sourceWarnings]);
+  }, [effectiveCost, effectiveIdeal, driver, driverValue, sourceWarnings]);
 
   const config = sliderConfig(driver, costNum, priceNum);
 
@@ -102,8 +142,8 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
       product_code: row.product_code,
       price_list_code: row.price_list_code,
       query_date: queryDate,
-      cost: row.cost.value,
-      ideal_percent: row.ideal_percent,
+      cost: effectiveCost,
+      ideal_percent: effectiveIdeal || null,
       driver,
       driver_value: driverValue || "0",
       source_inactive: row.warnings.includes("inactive_source"),
@@ -115,6 +155,22 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
       return;
     }
     setSaving(true);
+
+    // Save corrections first if any fields were edited
+    if (costEdited || idealEdited) {
+      const corrections = [];
+      if (costEdited) corrections.push({ field: "cost" as const, original_value: row.cost.value, corrected_value: editedCost });
+      if (idealEdited) corrections.push({ field: "ideal_percent" as const, original_value: row.ideal_percent, corrected_value: editedIdeal });
+      const corrParsed = correctionSchema.safeParse({ product_code: row.product_code, price_list_code: row.price_list_code, corrections });
+      if (corrParsed.success) {
+        await fetch("/api/corrections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(corrParsed.data),
+        });
+      }
+    }
+
     const response = await fetch("/api/simulations/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -155,10 +211,35 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
         </header>
 
         <div className="simContext">
-          <div><span>Costo vigente</span><strong>{formatMoney(row.cost.value)}</strong><small>{row.cost.valid_from ?? "Sin vigencia"}</small></div>
-          <div><span>Precio actual</span><strong>{formatMoney(row.price.value)}</strong><small>{row.price.valid_from ?? "Sin vigencia"}</small></div>
-          <div><span>Objetivo</span><strong>{formatPercent(row.ideal_percent)}</strong><small>{row.ideal_percent ? "Ganancia sobre costo" : "Sin objetivo exacto"}</small></div>
+          <EditableField
+            label="Costo vigente"
+            value={editedCost}
+            edited={costEdited}
+            original={row.cost.value}
+            onEdit={(v) => { setEditedCost(v); setServerResult(null); }}
+            onReset={() => { setEditedCost(row.cost.value ?? ""); setServerResult(null); }}
+          />
+          <div>
+            <span>Precio actual</span>
+            <strong>{formatMoney(row.price.value)}</strong>
+            <small>{row.price.valid_from ?? "Sin vigencia"}</small>
+          </div>
+          <EditableField
+            label="Objetivo %"
+            value={editedIdeal}
+            edited={idealEdited}
+            original={row.ideal_percent}
+            onEdit={(v) => { setEditedIdeal(v); setServerResult(null); }}
+            onReset={() => { setEditedIdeal(row.ideal_percent ?? ""); setServerResult(null); }}
+          />
         </div>
+
+        {(costEdited || idealEdited) && (
+          <div className="correctionNote" role="status">
+            <Pencil size={14} />
+            <span>Los valores editados se usan para la simulación y se guardarán al confirmar.</span>
+          </div>
+        )}
 
         {blocked ? (
           <div className="simBlocked" role="alert">
@@ -218,7 +299,7 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
             </section>
 
             <section className={`simThermometer ${thermometer}`}>
-              <div className="thermoHead"><ThermometerSun size={18} /><span>{thermometerLabel}</span></div>
+              <div className="thermoHead"><span>{thermometerLabel}</span></div>
               <div className="thermoTrack"><i /></div>
               <div className="thermoDiffs">
                 <span>Diferencia $ <strong>{formatMoney(sim?.gapAmount ?? null)}</strong></span>

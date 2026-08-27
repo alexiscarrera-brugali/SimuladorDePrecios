@@ -2,7 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+const PUBLIC_PATHS = ["/login", "/auth", "/api/auth"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -26,17 +26,17 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  const { data } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
-  if (!data.user && !isPublic) {
+  if (!session && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", path);
     return NextResponse.redirect(url);
   }
-  if (data.user && path === "/login") {
+  if (session && path === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";

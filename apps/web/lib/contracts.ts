@@ -19,3 +19,14 @@ export const simulationSchema = z.object({
 
 export type SimulationPayload = z.infer<typeof simulationSchema>;
 
+export const correctionSchema = z.object({
+  product_code: z.string().min(1),
+  price_list_code: z.string().min(1),
+  corrections: z.array(z.object({
+    field: z.enum(["cost", "ideal_percent"]),
+    original_value: z.string().nullable(),
+    corrected_value: z.string().nullable(),
+  })).min(1),
+});
+
+export type CorrectionPayload = z.infer<typeof correctionSchema>;
