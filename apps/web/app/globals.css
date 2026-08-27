@@ -245,7 +245,6 @@ a {
   overflow: hidden;
   box-shadow: var(--shadow);
 }
-.brandTile :global(img),
 .brandTile img {
   width: 100%;
   height: 100%;

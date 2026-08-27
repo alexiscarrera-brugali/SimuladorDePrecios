@@ -33,3 +33,6 @@ work/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Config de arranque local (ruta de build específica de la máquina)
+.claude/launch.json
