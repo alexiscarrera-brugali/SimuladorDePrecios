@@ -56,3 +56,23 @@ Usar turquesa para estados correctos, amarillo/naranja para advertencias y rojo 
 - No modificar migraciones ya aplicadas sin agregar una migración posterior compatible.
 - Probar en un Preview Deployment antes de promover a producción.
 - Si falta una definición funcional, mostrar el estado como pendiente o ambiguo; nunca inventar una regla silenciosa.
+
+## Supervisión humana
+
+Todos los sprints de este proyecto se ejecutaron bajo autorización y
+validación humana. El responsable del proyecto autorizó el alcance de cada
+sprint antes de su ejecución y validó el resultado antes de incorporarlo.
+
+Ningún agente actúa de forma autónoma sobre el repositorio ni sobre los
+entornos. En particular, requieren autorización humana explícita, caso por
+caso:
+
+- la publicación de cambios en el repositorio remoto (`git push`);
+- la aplicación de migraciones sobre la base de datos;
+- la promoción de cualquier despliegue a producción;
+- cualquier acción sobre datos comerciales reales.
+
+Las verificaciones automáticas (typecheck, lint, Vitest, build) son condición
+necesaria pero no suficiente: la aceptación funcional la realiza una persona
+mediante un recorrido manual de la aplicación. Los hallazgos de esas pruebas
+manuales, y no sólo los de las automáticas, son los que cierran un sprint.
