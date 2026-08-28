@@ -25,6 +25,7 @@ const analysis: AnalysisResponse = {
     },
   ],
   counts: { total: 1, ok: 1, warning: 0, conflict: 0 },
+  capabilities: { hasVolume: false, hasCategory: false },
 };
 
 const issues: ParsedIssue[] = [

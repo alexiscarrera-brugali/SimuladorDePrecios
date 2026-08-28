@@ -689,6 +689,208 @@ a {
 .metric.red strong { color: var(--red); }
 .metric.orange strong { color: var(--orange); }
 
+/* Cockpit del analista */
+
+.portfolioStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.vizCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px 18px;
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+.vizHeading { margin-bottom: 10px; }
+.vizHeading h2 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  margin: 2px 0 0;
+}
+.portfolioAside {
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 12px;
+}
+.portfolioStat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.portfolioStat span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.portfolioStat strong { font-family: var(--font-display); font-size: 24px; line-height: 1.1; color: var(--ink); }
+.portfolioStat strong.neg { color: var(--red); }
+.portfolioStat small { font-size: 11px; color: var(--muted); }
+
+/* Histograma de brecha */
+
+.viz { margin: 0; }
+.vizCaption { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.vizLegend { display: flex; gap: 16px; margin-bottom: 6px; }
+.vizLegend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-strong); }
+.vizSwatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.vizSwatch.below { background: var(--orange); }
+.vizSwatch.above { background: var(--teal); }
+.vizPlot { position: relative; }
+.vizPlot svg { display: block; height: 200px; }
+.vizBaseline { stroke: var(--border-strong); stroke-width: 1; }
+.vizTarget { stroke: var(--petrol); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.vizTargetLabel { fill: var(--petrol); font-size: 11px; font-weight: 600; font-family: var(--font-body); }
+.vizBar { transition: opacity 0.15s ease; }
+.vizBar.below { fill: var(--orange); }
+.vizBar.above { fill: var(--teal); }
+.vizBar.hot { opacity: 0.72; }
+.vizAxis { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.vizAxis.end { text-anchor: end; }
+.vizTip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.vizTip strong { font-size: 13px; }
+.vizTip span { font-size: 12px; opacity: 0.85; }
+.vizTip small { font-size: 11px; opacity: 0.7; }
+.vizEmpty {
+  display: flex;
+  align-items: center;
+  min-height: 160px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Clusters de excepción (filtros) */
+
+.exceptionRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.exceptionChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+.exceptionChip:hover:not(:disabled) { border-color: var(--border-strong); }
+.exceptionChip.active { border-color: var(--petrol); box-shadow: var(--ring); }
+.exceptionChip:disabled { opacity: 0.5; cursor: default; }
+.exceptionChip.empty { cursor: default; }
+.exIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--surface-sunken);
+  color: var(--muted-strong);
+  flex-shrink: 0;
+}
+.exceptionChip.orange .exIcon { background: var(--orange-soft); color: var(--orange); }
+.exceptionChip.yellow .exIcon { background: var(--yellow-soft); color: #b9860f; }
+.exceptionChip.red .exIcon { background: var(--red-soft); color: var(--red); }
+.exceptionChip.all .exIcon { background: var(--petrol-soft); color: var(--petrol); }
+.exText { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.exText strong { font-family: var(--font-display); font-size: 22px; line-height: 1.05; color: var(--ink); }
+.exText span { font-size: 13px; font-weight: 600; color: var(--muted-strong); }
+.exText small { font-size: 11px; color: var(--muted); }
+
+/* Tarjetas capability-gated */
+
+.capRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.capCard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: repeating-linear-gradient(135deg, var(--surface-sunken), var(--surface-sunken) 10px, transparent 10px, transparent 20px);
+}
+.capLock {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.capBody { min-width: 0; }
+.capTitle { font-size: 14px; font-weight: 700; color: var(--muted-strong); }
+.capBody p { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+.capReq {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--petrol);
+  background: var(--petrol-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Chip de filtro activo en la tabla */
+
+.activeFilterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--petrol);
+  background: var(--petrol-soft);
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.activeFilterChip:hover { background: #cfe0e6; }
+
+@media (max-width: 1080px) {
+  .portfolioStrip { grid-template-columns: 1fr; }
+  .portfolioAside { grid-template-rows: none; grid-template-columns: repeat(3, 1fr); }
+  .exceptionRow { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 620px) {
+  .exceptionRow { grid-template-columns: 1fr; }
+  .capRow { grid-template-columns: 1fr; }
+  .portfolioAside { grid-template-columns: 1fr; }
+}
+
 /* Tabla */
 
 .tableCard {

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import ExcelJS from "exceljs";
 import { Decimal } from "./decimal";
 import type { SourceStatus } from "./types";
+import { detectCapabilities, type DataCapabilities } from "./capabilities";
 
 export const REQUIRED_COLUMNS: Record<string, string[]> = {
   BD_LP: ["Sucursal", "Cod. Tabla", "Cod.Producto", "Precio Venta", "Vigencia", "Activo"],
@@ -59,6 +60,7 @@ export interface ParsedWorkbook {
   costs: CostRecord[];
   margins: MarginRecord[];
   issues: ParsedIssue[];
+  capabilities: DataCapabilities;
   summary: {
     priceRows: number;
     costRows: number;
@@ -298,6 +300,13 @@ export async function parseWorkbook(data: ArrayBuffer | Buffer): Promise<ParsedW
   issues.push(...qualityIssues(prices, "price"));
   issues.push(...qualityIssues(costs, "cost"));
 
+  // Capacidades opcionales: se leen de las hojas de precio y costo, donde el
+  // negocio podría sumar columnas de volumen o rubro sin romper el import.
+  const capabilities = detectCapabilities([
+    ...sheets["BD_LP"].headers,
+    ...sheets["SB1"].headers,
+  ].filter(Boolean));
+
   const summary = {
     priceRows: prices.length,
     costRows: costs.length,
@@ -307,7 +316,7 @@ export async function parseWorkbook(data: ArrayBuffer | Buffer): Promise<ParsedW
     conflicts: issues.filter((i) => i.severity === "conflict").length,
   };
 
-  return { sha256, priceLists, prices, costs, margins, issues, summary };
+  return { sha256, priceLists, prices, costs, margins, issues, capabilities, summary };
 }
 
 // Detección de problemas de calidad.

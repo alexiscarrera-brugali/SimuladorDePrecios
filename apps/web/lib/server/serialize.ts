@@ -30,6 +30,10 @@ export function analysisToJSON(res: AnalysisResponse) {
     query_date: res.queryDate,
     price_list: res.priceList,
     counts: res.counts,
+    capabilities: {
+      has_volume: res.capabilities.hasVolume,
+      has_category: res.capabilities.hasCategory,
+    },
     rows: res.rows.map((row) => ({
       product_code: row.productCode,
       description: row.description,

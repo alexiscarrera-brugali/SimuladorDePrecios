@@ -12,10 +12,14 @@ import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIs
 import type { SimulationPayload } from "@/lib/contracts";
 import { formatMoney, formatPercent } from "@/lib/simulation";
 import { warningLabels } from "@/lib/labels";
+import { bucketGaps, matchesException, portfolioSummary, type ExceptionKey } from "@/lib/portfolio";
 import { createSupabaseBrowserClient } from "@/lib/client/supabase";
 import { isAllowedXlsxMime, XLSX_MAX_BYTES } from "@/lib/config/upload";
 import { SimulatorPanel } from "@/components/simulations/SimulatorPanel";
 import { SimulationHistory } from "@/components/simulations/SimulationHistory";
+import { MarginDistribution } from "@/components/analysis/MarginDistribution";
+import { ExceptionClusters } from "@/components/analysis/ExceptionClusters";
+import { CapabilityGate } from "@/components/common/CapabilityGate";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -172,6 +176,7 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [exception, setException] = useState<ExceptionKey | null>(null);
 
   function toggleSort(field: SortField) {
     if (sortField === field) {
@@ -182,23 +187,16 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
     }
   }
 
-  const belowTarget = useMemo(() =>
-    analysis.rows.filter(r => {
-      const actual = r.actual_gain_percent !== null ? Number(r.actual_gain_percent) : null;
-      const ideal = r.ideal_percent !== null ? Number(r.ideal_percent) : null;
-      return actual !== null && ideal !== null && actual < ideal;
-    }).length,
-    [analysis.rows],
-  );
+  const summary = useMemo(() => portfolioSummary(analysis.rows), [analysis.rows]);
+  const histogram = useMemo(() => bucketGaps(analysis.rows), [analysis.rows]);
 
   const rows = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let result = q
-      ? analysis.rows.filter(r =>
-          r.product_code.toLowerCase().includes(q) ||
-          (r.description ?? "").toLowerCase().includes(q)
-        )
-      : [...analysis.rows];
+    let result = analysis.rows.filter(r => {
+      if (exception && !matchesException(r, exception)) return false;
+      if (!q) return true;
+      return r.product_code.toLowerCase().includes(q) || (r.description ?? "").toLowerCase().includes(q);
+    });
 
     if (sortField) {
       result = result.sort((a, b) => {
@@ -216,20 +214,71 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
       });
     }
     return result;
-  }, [analysis.rows, search, sortField, sortDir]);
+  }, [analysis.rows, search, sortField, sortDir, exception]);
+
+  const filterLabel = exception === "below_target" ? "Bajo objetivo"
+    : exception === "without_cost" ? "Sin costo"
+    : exception === "conflict" ? "Conflictos" : null;
 
   return (
     <div className={loading ? "content loading" : "content"}>
-      <section className="metricGrid">
-        <Metric label="Productos visibles" value={analysis.counts.total} tone="ink" caption="Ninguna falla se oculta" />
-        <Metric label="Datos consistentes" value={analysis.counts.ok} tone="teal" caption="Listos para analizar" />
-        <Metric label="Advertencias" value={analysis.counts.warning} tone="yellow" caption="Requieren revisión" />
-        <Metric label="Conflictos" value={analysis.counts.conflict} tone="red" caption="Bloquean sólo su fila" />
-        <Metric label="Bajo objetivo" value={belowTarget} tone="orange" caption="Margen actual < objetivo" />
+      <section className="portfolioStrip">
+        <div className="vizCard">
+          <div className="vizHeading">
+            <span className="eyebrow">Salud de cartera</span>
+            <h2>¿Qué tan lejos está la cartera de su objetivo?</h2>
+          </div>
+          <MarginDistribution histogram={histogram} summary={summary} />
+        </div>
+        <aside className="portfolioAside">
+          <div className="portfolioStat">
+            <span>Evaluados</span>
+            <strong>{summary.evaluated.toLocaleString("es-AR")}</strong>
+            <small>de {summary.total.toLocaleString("es-AR")} productos visibles</small>
+          </div>
+          <div className="portfolioStat">
+            <span>Sin objetivo</span>
+            <strong>{summary.withoutTarget.toLocaleString("es-AR")}</strong>
+            <small>no entran en la distribución</small>
+          </div>
+          <div className="portfolioStat">
+            <span>Peor brecha</span>
+            <strong className={summary.worstGapPoints !== null && summary.worstGapPoints < -0.5 ? "neg" : ""}>
+              {summary.worstGapPoints === null ? "—" : `${summary.worstGapPoints > 0 ? "+" : ""}${summary.worstGapPoints.toFixed(2)} pp`}
+            </strong>
+            <small>distancia al objetivo más negativa</small>
+          </div>
+        </aside>
       </section>
+
+      <ExceptionClusters summary={summary} active={exception} onToggle={setException} />
+
+      <section className="capRow">
+        <CapabilityGate
+          enabled={analysis.capabilities.has_volume}
+          title="Margen ponderado por ingreso"
+          unlocks="Pondera la salud de la cartera por lo que cada producto factura y habilita el análisis ABC/Pareto."
+          requirement="volumen de ventas"
+        />
+        <CapabilityGate
+          enabled={analysis.capabilities.has_category}
+          title="Segmentación por rubro"
+          unlocks="Agrupa y compara los márgenes por familia o rubro de producto."
+          requirement="categoría/rubro"
+        />
+      </section>
+
       <section className="tableCard">
         <div className="cardHeading">
-          <div><span className="eyebrow">{analysis.price_list.description}</span><h2>Precio, costo y objetivo vigentes</h2></div>
+          <div>
+            <span className="eyebrow">{analysis.price_list.description}</span>
+            <h2>Precio, costo y objetivo vigentes</h2>
+            {filterLabel && (
+              <button className="activeFilterChip" onClick={() => setException(null)}>
+                {filterLabel} · {rows.length} <X size={13} />
+              </button>
+            )}
+          </div>
           <label className="searchBox">
             <Search size={17} />
             <input
@@ -256,9 +305,7 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
             </thead>
             <tbody>
               {rows.map(row => {
-                const actualN = row.actual_gain_percent !== null ? Number(row.actual_gain_percent) : null;
-                const idealN = row.ideal_percent !== null ? Number(row.ideal_percent) : null;
-                const isBelow = actualN !== null && idealN !== null && actualN < idealN;
+                const isBelow = matchesException(row, "below_target");
                 const hasSim = Boolean(simulations[row.product_code]);
                 return (
                   <tr key={`${row.branch_code}-${row.product_code}`} onClick={() => onSelect(row)} className={hasSim ? "hasSim" : ""}>
@@ -291,16 +338,12 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
         </div>
         {!rows.length && (
           <div className="emptyTable">
-            {search ? "No hay productos que coincidan con la búsqueda." : "Sin productos para mostrar."}
+            {search || exception ? "No hay productos que coincidan con el filtro activo." : "Sin productos para mostrar."}
           </div>
         )}
       </section>
     </div>
   );
-}
-
-function Metric({ label, value, tone, caption }: { label: string; value: number; tone: string; caption: string }) {
-  return <article className={`metric ${tone}`}><span>{label}</span><strong>{value.toLocaleString("es-AR")}</strong><small>{caption}</small><i /></article>;
 }
 
 function StatusBadge({ status, warnings }: { status: string; warnings: string[] }) {

@@ -6,6 +6,7 @@ import { resolveEffective } from "./effective";
 import { simulate } from "./simulation";
 import type { EffectiveCandidate, EffectiveValue } from "./types";
 import type { CostRecord, MarginRecord, PriceRecord } from "./importer";
+import { NO_CAPABILITIES, type DataCapabilities } from "./capabilities";
 
 export interface PriceListRef {
   code: string;
@@ -45,6 +46,7 @@ export interface AnalysisResponse {
   priceList: PriceListRef;
   rows: AnalysisRow[];
   counts: { total: number; ok: number; warning: number; conflict: number };
+  capabilities: DataCapabilities;
 }
 
 export interface AnalyzeInput {
@@ -54,6 +56,8 @@ export interface AnalyzeInput {
   costs: CostRecord[];
   margins: MarginRecord[];
   products: Map<string, ProductRef>;
+  /** Capacidades de datos del lote; por defecto ninguna (volumen/rubro ausentes). */
+  capabilities?: DataCapabilities;
 }
 
 function effView(value: EffectiveValue): EffectiveView {
@@ -164,5 +168,5 @@ export function analyze(input: AnalyzeInput): AnalysisResponse {
   const counts = { total: rows.length, ok: 0, warning: 0, conflict: 0 };
   for (const row of rows) counts[row.dataStatus] += 1;
 
-  return { queryDate, priceList, rows, counts };
+  return { queryDate, priceList, rows, counts, capabilities: input.capabilities ?? NO_CAPABILITIES };
 }

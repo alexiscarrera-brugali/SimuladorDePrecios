@@ -29,11 +29,17 @@ export interface AnalysisRow {
   simulation_blocked: boolean;
 }
 
+export interface DataCapabilities {
+  has_volume: boolean;
+  has_category: boolean;
+}
+
 export interface AnalysisResponse {
   query_date: string;
   price_list: PriceList;
   rows: AnalysisRow[];
   counts: { total: number; ok: number; warning: number; conflict: number };
+  capabilities: DataCapabilities;
 }
 
 export interface QualityIssue {
