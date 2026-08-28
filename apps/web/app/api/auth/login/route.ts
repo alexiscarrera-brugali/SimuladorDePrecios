@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    console.error("[AUTH] signInWithPassword error:", error.message, error.status);
+    // No se registra el detalle del proveedor: el mensaje puede revelar si la
+    // cuenta existe o su estado. Sólo el código de estado, para diagnóstico.
+    console.error("[AUTH] login fallido", { status: error.status });
     return NextResponse.json({ error: "Correo o contraseña inválidos" }, { status: 401 });
   }
 

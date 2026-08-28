@@ -18,3 +18,21 @@ El navegador no accede a PostgreSQL con privilegios administrativos. Las lectura
 4. Ejecutar `npm run dev` y abrir `http://localhost:3000`.
 
 Las instrucciones completas se encuentran en `docs/puesta-en-marcha.md`.
+
+## Verificación
+
+Dentro de `apps/web`, antes de abrir un pull request:
+
+```bash
+npm run typecheck && npm run lint && npm test && npm run build
+```
+
+## Licencia
+
+Software propietario de Brugali. Todos los derechos reservados. El uso está
+limitado al ámbito interno de la empresa y a las personas expresamente
+autorizadas. Ver [LICENSE](LICENSE).
+
+Los datos comerciales (planillas de costos, precios y márgenes) son
+confidenciales y no deben incorporarse al repositorio: `.gitignore` excluye
+`*.xlsx` y `*.csv` por ese motivo.
