@@ -9,6 +9,7 @@ import { calculateSimulation, formatMoney, formatPercent } from "@/lib/simulatio
 import { explain } from "@/lib/labels";
 import { HistoryChart } from "./HistoryChart";
 import { MarginBridge } from "./MarginBridge";
+import { ProductListMatrix } from "./ProductListMatrix";
 
 type SimulatorPanelProps = {
   row: AnalysisRow;
@@ -340,6 +341,11 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
             </div>
           </>
         )}
+
+        <section className="simMatrix">
+          <span className="fieldLabel">Margen por lista de precio</span>
+          <ProductListMatrix productCode={row.product_code} queryDate={queryDate} currentListCode={row.price_list_code} />
+        </section>
 
         <section className="simHistory">
           <span className="fieldLabel">Histórico de precio y costo</span>

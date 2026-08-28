@@ -20,6 +20,7 @@ import { SimulationHistory } from "@/components/simulations/SimulationHistory";
 import { MarginDistribution } from "@/components/analysis/MarginDistribution";
 import { ExceptionClusters } from "@/components/analysis/ExceptionClusters";
 import { BatchSimulator } from "@/components/analysis/BatchSimulator";
+import { Sparkline } from "@/components/analysis/Sparkline";
 import { CapabilityGate } from "@/components/common/CapabilityGate";
 import { CommandPalette, type Command } from "@/components/common/CommandPalette";
 
@@ -260,6 +261,16 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
   const summary = useMemo(() => portfolioSummary(analysis.rows), [analysis.rows]);
   const histogram = useMemo(() => bucketGaps(analysis.rows), [analysis.rows]);
 
+  const [trends, setTrends] = useState<Record<string, number[]>>({});
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/analysis/trends?date=${analysis.query_date}&price_list=${encodeURIComponent(analysis.price_list.code)}`)
+      .then(r => (r.ok ? r.json() : { prices: {} }))
+      .then(d => { if (alive) setTrends(d.prices ?? {}); })
+      .catch(() => { /* la sparkline degrada a vacío */ });
+    return () => { alive = false; };
+  }, [analysis.query_date, analysis.price_list.code]);
+
   const rows = useMemo(() => {
     const q = search.toLowerCase().trim();
     let result = analysis.rows.filter(r => {
@@ -385,6 +396,7 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                 <SortTh label="Precio" field="price" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Objetivo" field="ideal" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Margen actual" field="margin" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+                <th>Precio (tend.)</th>
                 <th>Estado</th>
                 <th />
               </tr>
@@ -422,6 +434,7 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                       {isBelow && <TrendingDown size={13} className="marginBelowIcon" aria-label="Por debajo del objetivo" />}
                       <small>{formatMoney(row.actual_gain_amount)}</small>
                     </td>
+                    <td><Sparkline values={trends[row.product_code]} /></td>
                     <td><StatusBadge status={row.data_status} warnings={row.warnings} /></td>
                     <td><button aria-label={`Abrir ${row.product_code}`}><ChevronRight /></button></td>
                   </tr>

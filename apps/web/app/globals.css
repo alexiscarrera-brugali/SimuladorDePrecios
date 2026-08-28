@@ -1850,6 +1850,51 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
 .appShell.dense .exceptionChip { padding: 9px 12px; }
 .appShell.dense .exText strong { font-size: 18px; }
 
+/* Matriz de margen por lista de precio */
+
+.matrixEmpty, .matrixLead { font-size: 12px; color: var(--muted); }
+.matrixLead { margin: 0 0 8px; }
+.matrixGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.matrixCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+}
+.matrixCell.green { background: var(--teal-soft); border-color: transparent; }
+.matrixCell.red { background: var(--red-soft); border-color: transparent; }
+.matrixCell.neutral { background: var(--surface-sunken); }
+.matrixCell.empty { background: repeating-linear-gradient(135deg, var(--surface-sunken), var(--surface-sunken) 6px, transparent 6px, transparent 12px); }
+.matrixCell.current { outline: 2px solid var(--petrol); outline-offset: 1px; }
+.matrixListName { font-size: 11px; color: var(--muted-strong); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.matrixMargin { font-family: var(--font-display); font-size: 18px; color: var(--ink); line-height: 1.15; }
+.matrixCell.red .matrixMargin { color: var(--red); }
+.matrixCell.green .matrixMargin { color: #1f7469; }
+.matrixPrice { font-size: 11px; color: var(--muted); }
+.matrixGap { font-size: 11px; font-weight: 600; color: var(--muted-strong); }
+.matrixNoPrice { font-size: 12px; color: var(--muted); }
+.simMatrix { margin-top: 4px; }
+
+/* Sparkline de tendencia por fila */
+
+.spark { display: inline-flex; align-items: center; gap: 6px; }
+.sparkSvg { display: block; }
+.sparkLine { fill: none; stroke: var(--petrol); stroke-width: 1.5; }
+.sparkDot { fill: var(--petrol); }
+.sparkDelta { font-size: 11px; font-weight: 600; }
+.sparkDelta.up { color: #1f7469; }
+.sparkDelta.down { color: var(--orange); }
+.sparkDelta.flat { color: var(--muted); }
+.sparkEmpty { color: var(--border-strong); font-size: 12px; }
+
 /* Historial de simulaciones */
 .historyPage {
   padding: 22px 32px 40px;
