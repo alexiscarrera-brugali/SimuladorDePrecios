@@ -8,6 +8,7 @@ import { correctionSchema, simulationSchema } from "@/lib/contracts";
 import { calculateSimulation, formatMoney, formatPercent } from "@/lib/simulation";
 import { explain } from "@/lib/labels";
 import { HistoryChart } from "./HistoryChart";
+import { MarginBridge } from "./MarginBridge";
 
 type SimulatorPanelProps = {
   row: AnalysisRow;
@@ -296,6 +297,16 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
               <div><span>Ganancia $</span><strong>{formatMoney(serverResult?.gain_amount ?? sim?.gainAmount ?? null)}</strong></div>
               <div><span>Ganancia %</span><strong>{formatPercent(serverResult?.gain_percent ?? sim?.gainPercent ?? null)}</strong></div>
               <div><span>Precio objetivo</span><strong>{formatMoney(sim?.idealPrice ?? null)}</strong></div>
+            </section>
+
+            <section className="simBridge">
+              <span className="fieldLabel">Composición del precio</span>
+              <MarginBridge
+                cost={effectiveCost}
+                price={serverResult?.price ?? (sim?.price ? sim.price.toFixed() : null)}
+                idealPrice={sim?.idealPrice ? sim.idealPrice.toFixed() : null}
+                thermometer={(serverResult?.thermometer as "green" | "red" | "neutral") ?? sim?.thermometer ?? "neutral"}
+              />
             </section>
 
             <section className={`simThermometer ${thermometer}`}>

@@ -1603,6 +1603,21 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   margin-top: 4px;
 }
 
+.simBridge { margin-top: 4px; }
+.simBridge .fieldLabel { display: block; margin-bottom: 6px; }
+.bridge { display: block; }
+.bridgeEmpty { font-size: 13px; color: var(--muted); }
+.bridgeLabel { fill: var(--muted); font-size: 12px; font-family: var(--font-body); text-anchor: end; }
+.bridgeValue { fill: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--font-body); }
+.bridgeCost { fill: var(--petrol); }
+.bridgeBase { fill: var(--border-strong); }
+.bridgeGain.gainUp { fill: var(--teal); }
+.bridgeGain.gainDown { fill: var(--orange); }
+.bridgeGain.gainNeutral { fill: var(--muted); }
+.bridgeLoss { fill: var(--red); }
+.bridgeTarget { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.bridgeTargetLabel { fill: var(--muted-strong); font-size: 11px; font-weight: 600; font-family: var(--font-body); }
+
 .simThermometer {
   border-radius: var(--radius);
   padding: 14px 16px;
@@ -1748,6 +1763,92 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Paleta de comandos (Cmd/Ctrl + K) */
+
+.paletteTrigger { gap: 6px; padding: 0 10px; }
+.paletteTrigger kbd, .paletteSearch kbd {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.densityToggle { width: 38px; }
+
+.paletteOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 29, 27, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  z-index: 50;
+}
+.palette {
+  width: min(560px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.paletteSearch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+.paletteSearch input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--ink);
+  background: transparent;
+}
+.paletteList { max-height: 52vh; overflow: auto; padding: 6px; }
+.paletteEmpty { padding: 20px; text-align: center; color: var(--muted); font-size: 14px; }
+.paletteGroup {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  padding: 10px 12px 4px;
+}
+.paletteItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+.paletteItem.active { background: var(--petrol-soft); }
+.paletteLabel { flex: 1; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.paletteHint { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.paletteEnter { color: var(--petrol); flex-shrink: 0; }
+
+/* Modo denso: más filas a la vista para power-users */
+
+.appShell.dense .content { padding: 14px 20px 28px; }
+.appShell.dense .tableCard table td { padding-top: 8px; padding-bottom: 8px; }
+.appShell.dense .tableCard table td small { display: none; }
+.appShell.dense .portfolioStrip,
+.appShell.dense .exceptionRow { margin-bottom: 10px; }
+.appShell.dense .exceptionChip { padding: 9px 12px; }
+.appShell.dense .exText strong { font-size: 18px; }
 
 /* Historial de simulaciones */
 .historyPage {

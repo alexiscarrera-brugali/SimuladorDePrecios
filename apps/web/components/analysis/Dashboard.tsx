@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowDownToLine, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, ChevronUp,
-  FileSpreadsheet, FlaskConical, LogOut, Menu, RefreshCw,
+  FileSpreadsheet, FlaskConical, LogOut, Menu, Rows2, Rows3, RefreshCw,
   Search, ShieldAlert, TrendingDown, Upload, X,
 } from "lucide-react";
 import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIssue } from "@/lib/types";
@@ -21,6 +21,7 @@ import { MarginDistribution } from "@/components/analysis/MarginDistribution";
 import { ExceptionClusters } from "@/components/analysis/ExceptionClusters";
 import { BatchSimulator } from "@/components/analysis/BatchSimulator";
 import { CapabilityGate } from "@/components/common/CapabilityGate";
+import { CommandPalette, type Command } from "@/components/common/CommandPalette";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -42,7 +43,35 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [dense, setDense] = useState(false);
   const lastFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Se lee la preferencia después de montar para no romper la hidratación
+    // (el HTML del servidor no conoce localStorage).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    try { setDense(localStorage.getItem("brugali:dense") === "1"); } catch { /* almacenamiento no disponible */ }
+  }, []);
+
+  function toggleDense() {
+    setDense(prev => {
+      const next = !prev;
+      try { localStorage.setItem("brugali:dense", next ? "1" : "0"); } catch { /* ignorar */ }
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(o => !o);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const openRow = useCallback((row: AnalysisRow) => {
     lastFocus.current = document.activeElement as HTMLElement | null;
@@ -117,8 +146,31 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
     simulations: "Historial de simulaciones",
   };
 
+  const commands = useMemo<Command[]>(() => {
+    const cmds: Command[] = [
+      { id: "view-analysis", label: "Ir a Análisis", group: "Vistas", run: () => setActiveView("analysis") },
+      { id: "view-issues", label: "Ir a Observaciones", group: "Vistas", run: () => setActiveView("issues") },
+      { id: "view-simulations", label: "Ir a Simulaciones", group: "Vistas", run: () => setActiveView("simulations") },
+      { id: "view-import", label: "Ir a Importar base", group: "Vistas", run: () => setActiveView("import") },
+      { id: "toggle-dense", label: dense ? "Desactivar modo denso" : "Activar modo denso", group: "Vistas", run: toggleDense },
+    ];
+    for (const list of lists) {
+      cmds.push({ id: `list-${list.code}`, label: `Lista ${list.code} · ${list.description}`, hint: "Cambiar lista", group: "Listas de precio", run: () => { setSelectedList(list.code); setActiveView("analysis"); } });
+    }
+    for (const row of analysis?.rows ?? []) {
+      cmds.push({
+        id: `prod-${row.branch_code}-${row.product_code}`,
+        label: `${row.product_code} · ${row.description ?? "Sin descripción"}`,
+        hint: "Abrir simulador",
+        group: "Productos",
+        run: () => { setActiveView("analysis"); setSelectedRow(row); },
+      });
+    }
+    return cmds;
+  }, [lists, analysis, dense]);
+
   return (
-    <main className="appShell">
+    <main className={`appShell ${dense ? "dense" : ""}`}>
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
         <button className="mobileClose" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú"><X /></button>
         <div className="sidebarBrand"><Image src="/brand/brugali-logo.jpg" alt="Brugali" width={136} height={136} priority /></div>
@@ -138,6 +190,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
           <div><span className="eyebrow">Tablero de costos y precios</span><h1>{viewTitles[activeView]}</h1></div>
           <div className="topActions">
             <span className="dataPulse"><i />Datos privados</span>
+            <button className="iconButton densityToggle" onClick={toggleDense} aria-pressed={dense} title={dense ? "Vista cómoda" : "Vista densa"} aria-label={dense ? "Vista cómoda" : "Vista densa"}>
+              {dense ? <Rows2 size={17} /> : <Rows3 size={17} />}
+            </button>
+            <button className="iconButton paletteTrigger" onClick={() => setPaletteOpen(true)} aria-label="Abrir paleta de comandos" title="Buscar (Ctrl/Cmd + K)">
+              <Search size={16} /><kbd>⌘K</kbd>
+            </button>
             {activeView === "analysis" && <button className="secondaryButton" onClick={exportWorkbook}><ArrowDownToLine size={17} />Exportar Excel</button>}
           </div>
         </header>
@@ -159,6 +217,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
         )}
       </section>
       {selectedRow && <SimulatorPanel row={selectedRow} queryDate={queryDate} onClose={closeSimulator} onChange={payload => setSimulations(current => ({ ...current, [payload.product_code]: payload }))} />}
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} commands={commands} />}
     </main>
   );
 }
