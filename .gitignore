@@ -1,4 +1,7 @@
+# ---------------------------------------------------------------------------
 # Secretos y configuración local
+# Nunca versionar credenciales. Sólo .env.example es público.
+# ---------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
@@ -6,9 +9,44 @@
 *.pem
 *.p12
 *.pfx
-.vercel/
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.gpg
+*.asc
+secrets.json
+credentials.json
+service-account*.json
+*.mmdb
 
+# ---------------------------------------------------------------------------
+# Plataformas de despliegue
+# ---------------------------------------------------------------------------
+.vercel/
+.netlify/
+.serverless/
+.amplify/
+.firebase/
+.wrangler/
+
+# ---------------------------------------------------------------------------
+# Supabase (CLI local)
+# ---------------------------------------------------------------------------
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/logs/
+
+# ---------------------------------------------------------------------------
 # Datos operativos y artefactos locales
+# Contienen información comercial de Brugali: no deben salir del entorno.
+# ---------------------------------------------------------------------------
 /data/
 /imports/
 /exports/
@@ -19,34 +57,119 @@
 *.db
 *.sqlite
 *.sqlite3
+*.dump
+*.bak
 
-# Node, Next.js y pruebas
+# Planillas fuente (se cargan por la app, no por el repo)
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+!**/fixtures/**/*.csv
+!**/__fixtures__/**/*.csv
+!**/test/**/*.csv
+
+# ---------------------------------------------------------------------------
+# Dependencias
+# ---------------------------------------------------------------------------
 **/node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/versions
+.npm
+*.tgz
+
+# ---------------------------------------------------------------------------
+# Build de Next.js y cachés de herramientas
+# ---------------------------------------------------------------------------
 **/.next/
 **/out/
+**/build/
+**/dist/
 **/.turbo/
+**/.swc/
 **/.vite/
-**/coverage/
+**/.cache/
+**/.parcel-cache/
+**/.eslintcache
+**/.stylelintcache
 *.tsbuildinfo
+next-env.d.ts.timestamp
+
+# ---------------------------------------------------------------------------
+# Pruebas y cobertura
+# ---------------------------------------------------------------------------
+**/coverage/
+**/.nyc_output/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/.playwright/
+**/vitest.config.*.timestamp*
+
+# ---------------------------------------------------------------------------
+# Logs y procesos
+# ---------------------------------------------------------------------------
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+*.pid
+*.pid.lock
+*.seed
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.node_repl_history
 
+# ---------------------------------------------------------------------------
 # Python heredado o herramientas auxiliares
+# ---------------------------------------------------------------------------
 **/.venv/
+**/venv/
 **/*.egg-info/
 **/__pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .coverage
+.coverage.*
 htmlcov/
 
-# Configuración privada del editor y del sistema
+# ---------------------------------------------------------------------------
+# Editores, IDE y herramientas de asistencia
+# ---------------------------------------------------------------------------
 .claude/
+.cursor/
+.aider*
 .idea/
 .vscode/
+!.vscode/extensions.json
+.fleet/
+.zed/
+.history/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ---------------------------------------------------------------------------
+# Sistema operativo
+# ---------------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
