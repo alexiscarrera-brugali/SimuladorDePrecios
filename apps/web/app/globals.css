@@ -891,6 +891,79 @@ a {
   .portfolioAside { grid-template-columns: 1fr; }
 }
 
+/* Selección múltiple y barra de lote */
+
+.selectCol { width: 40px; text-align: center; }
+.selectCol input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--petrol); }
+tr.rowSelected { background: var(--petrol-soft); }
+
+.batchBar {
+  position: sticky;
+  bottom: 18px;
+  margin: 18px auto 0;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 14px 12px 22px;
+  box-shadow: var(--shadow-lg);
+  z-index: 20;
+}
+.batchBarCount { font-size: 14px; }
+.batchBarCount strong { font-size: 16px; }
+.batchBarActions { display: flex; align-items: center; gap: 8px; }
+.batchBar .textButton { color: rgba(255, 255, 255, 0.8); }
+.batchBar .textButton:hover { color: #fff; }
+
+/* Panel de what-if de cartera */
+
+.batchPanel { max-width: 620px; }
+.ruleHint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.batchAggregate {
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin: 4px 0 6px;
+}
+.batchMean span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.batchMeanValues { display: flex; align-items: center; gap: 12px; margin: 2px 0; color: var(--muted); }
+.batchMeanValues strong { font-family: var(--font-display); font-size: 26px; color: var(--ink); }
+.batchMeanValues strong.up { color: var(--teal); }
+.batchMeanValues strong.down { color: var(--orange); }
+.batchMean small { font-size: 11px; color: var(--muted); }
+.batchChips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.batchChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted-strong);
+}
+.batchChip.green { background: var(--teal-soft); color: #1f7469; border-color: transparent; }
+.batchChip.red { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.batchChip.neutral { background: var(--petrol-soft); color: var(--petrol); border-color: transparent; }
+.batchChip.muted { color: var(--muted); }
+
+.batchItems { max-height: 260px; overflow: auto; margin: 6px 0; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.batchItems table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.batchItems thead th { position: sticky; top: 0; background: var(--surface-sunken); text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.batchItems td { padding: 8px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
+.batchItems td svg { color: var(--muted); vertical-align: middle; }
+.batchItems tr.skippedRow { opacity: 0.55; }
+.skipReason { color: var(--muted); }
+.effGood { color: #1f7469; font-weight: 600; }
+.effBad { color: var(--red); font-weight: 600; }
+.effNone { color: var(--muted); }
+
 /* Tabla */
 
 .tableCard {

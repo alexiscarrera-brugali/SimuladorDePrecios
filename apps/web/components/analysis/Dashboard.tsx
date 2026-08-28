@@ -19,6 +19,7 @@ import { SimulatorPanel } from "@/components/simulations/SimulatorPanel";
 import { SimulationHistory } from "@/components/simulations/SimulationHistory";
 import { MarginDistribution } from "@/components/analysis/MarginDistribution";
 import { ExceptionClusters } from "@/components/analysis/ExceptionClusters";
+import { BatchSimulator } from "@/components/analysis/BatchSimulator";
 import { CapabilityGate } from "@/components/common/CapabilityGate";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -177,6 +178,16 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [exception, setException] = useState<ExceptionKey | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchOpen, setBatchOpen] = useState(false);
+
+  function toggleSelected(code: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      return next;
+    });
+  }
 
   function toggleSort(field: SortField) {
     if (sortField === field) {
@@ -294,6 +305,22 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
           <table>
             <thead>
               <tr>
+                <th className="selectCol">
+                  <input
+                    type="checkbox"
+                    aria-label="Seleccionar todos los visibles"
+                    checked={rows.length > 0 && rows.every(r => selected.has(r.product_code))}
+                    ref={el => { if (el) el.indeterminate = rows.some(r => selected.has(r.product_code)) && !rows.every(r => selected.has(r.product_code)); }}
+                    onChange={e => {
+                      setSelected(prev => {
+                        const next = new Set(prev);
+                        if (e.target.checked) rows.forEach(r => next.add(r.product_code));
+                        else rows.forEach(r => next.delete(r.product_code));
+                        return next;
+                      });
+                    }}
+                  />
+                </th>
                 <SortTh label="Producto" field="product" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Costo" field="cost" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Precio" field="price" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
@@ -308,7 +335,15 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                 const isBelow = matchesException(row, "below_target");
                 const hasSim = Boolean(simulations[row.product_code]);
                 return (
-                  <tr key={`${row.branch_code}-${row.product_code}`} onClick={() => onSelect(row)} className={hasSim ? "hasSim" : ""}>
+                  <tr key={`${row.branch_code}-${row.product_code}`} onClick={() => onSelect(row)} className={`${hasSim ? "hasSim" : ""} ${selected.has(row.product_code) ? "rowSelected" : ""}`}>
+                    <td className="selectCol" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Seleccionar ${row.product_code}`}
+                        checked={selected.has(row.product_code)}
+                        onChange={() => toggleSelected(row.product_code)}
+                      />
+                    </td>
                     <td>
                       <strong>{row.product_code}</strong>
                       <span>{row.description ?? "Sin descripción"}</span>
@@ -342,6 +377,26 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
           </div>
         )}
       </section>
+
+      {selected.size > 0 && (
+        <div className="batchBar" role="region" aria-label="Acciones por lote">
+          <span className="batchBarCount"><strong>{selected.size}</strong> seleccionado{selected.size === 1 ? "" : "s"}</span>
+          <div className="batchBarActions">
+            <button className="textButton" onClick={() => setSelected(new Set())}>Limpiar</button>
+            <button className="primaryButton" onClick={() => setBatchOpen(true)}><FlaskConical size={16} />Simular en lote</button>
+          </div>
+        </div>
+      )}
+
+      {batchOpen && (
+        <BatchSimulator
+          productCodes={[...selected]}
+          priceListCode={analysis.price_list.code}
+          queryDate={analysis.query_date}
+          onClose={() => setBatchOpen(false)}
+          onSaved={() => { /* el escenario queda en Simulaciones */ }}
+        />
+      )}
     </div>
   );
 }

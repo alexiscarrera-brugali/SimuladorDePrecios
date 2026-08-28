@@ -30,3 +30,22 @@ export const correctionSchema = z.object({
 });
 
 export type CorrectionPayload = z.infer<typeof correctionSchema>;
+
+export const batchSchema = z
+  .object({
+    price_list_code: z.string().min(1),
+    query_date: z.string().date(),
+    rule_kind: z.enum(["to_target", "price_delta_pct", "cost_shock_pct"]),
+    rule_value: z.string().nullable(),
+    product_codes: z.array(z.string().min(1)).min(1, "Elegí al menos un producto"),
+    note: z.string().max(500).optional(),
+    save: z.boolean().default(false),
+  })
+  .refine(
+    (data) =>
+      data.rule_kind === "to_target" ||
+      (data.rule_value !== null && data.rule_value.trim() !== "" && !Number.isNaN(Number(data.rule_value))),
+    { message: "La regla necesita un porcentaje válido", path: ["rule_value"] },
+  );
+
+export type BatchPayload = z.infer<typeof batchSchema>;

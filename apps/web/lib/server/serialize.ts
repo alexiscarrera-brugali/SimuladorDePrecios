@@ -1,6 +1,8 @@
 // Serialización del motor (camelCase) al contrato JSON de la UI (snake_case).
 import type { AnalysisResponse } from "@/lib/domain/analysis";
 import type { ParsedIssue, ParsedWorkbook } from "@/lib/domain/importer";
+import type { BatchOutcome } from "@/lib/domain/batch";
+import { toStr } from "@/lib/domain/decimal";
 
 export function issueToJSON(issue: ParsedIssue) {
   return {
@@ -58,6 +60,26 @@ export function analysisToJSON(res: AnalysisResponse) {
       data_status: row.dataStatus,
       warnings: row.warnings,
       simulation_blocked: row.simulationBlocked,
+    })),
+  };
+}
+
+export function batchOutcomeToJSON(outcome: BatchOutcome) {
+  return {
+    aggregate: outcome.aggregate,
+    items: outcome.items.map((i) => ({
+      product_code: i.productCode,
+      branch_code: i.branchCode,
+      before_price: toStr(i.beforePrice),
+      after_price: toStr(i.afterPrice),
+      before_gain_percent: toStr(i.beforeGainPercent),
+      after_gain_percent: toStr(i.afterGainPercent),
+      thermometer: i.thermometer,
+      crossed_into_target: i.crossedIntoTarget,
+      fell_below_target: i.fellBelowTarget,
+      skipped: i.skipped,
+      reason: i.reason,
+      warnings: i.warnings,
     })),
   };
 }
