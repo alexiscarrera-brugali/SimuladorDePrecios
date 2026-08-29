@@ -111,9 +111,11 @@ export function SimulationHistory() {
                     <span className="scenarioMeta">Lista {s.price_list_code} · {s.item_count} producto{s.item_count === 1 ? "" : "s"}</span>
                   </div>
                   <div className="scenarioMean">
-                    <strong>{before ?? "—"}%</strong>
-                    <span className="scenarioArrow">→</span>
-                    <strong className={after && before && Number(after) < Number(before) ? "down" : after && before && Number(after) > Number(before) ? "up" : ""}>{after ?? "—"}%</strong>
+                    <span className="scenarioMeanValues">
+                      <strong>{before ?? "—"}%</strong>
+                      <span className="scenarioArrow">→</span>
+                      <strong className={after && before && Number(after) < Number(before) ? "down" : after && before && Number(after) > Number(before) ? "up" : ""}>{after ?? "—"}%</strong>
+                    </span>
                     <small>margen medio</small>
                   </div>
                   <div className="scenarioChips">

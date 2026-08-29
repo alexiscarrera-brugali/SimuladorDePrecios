@@ -241,8 +241,10 @@ function SortTh({ label, field, sortField, sortDir, onSort }: { label: string; f
   const active = sortField === field;
   return (
     <th className="sortable" onClick={() => onSort(field)} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-      <span>{label}</span>
-      {active ? (sortDir === "asc" ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={12} className="sortIcon" />}
+      <span className="thSort">
+        <span>{label}</span>
+        {active ? (sortDir === "asc" ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={12} className="sortIcon" />}
+      </span>
     </th>
   );
 }
