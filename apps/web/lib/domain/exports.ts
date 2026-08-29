@@ -1,33 +1,33 @@
-// Exportación analítica: genera un Excel de tres hojas (Resultados,
-// Observaciones, Metadatos). Recalcula las simulaciones visibles en el servidor
-// (autoridad). Archivo analítico; NO apto para carga automática en TOTVS.
+// Exportación "lista de precios lista para usar": una planilla legible en
+// español con los precios vigentes y su margen, más una hoja con lo que hay que
+// revisar. Sin claves técnicas ni identificadores en inglés. Archivo analítico;
+// NO apto para carga automática en TOTVS.
 import ExcelJS from "exceljs";
-import { Decimal, toStr } from "./decimal";
-import { simulate } from "./simulation";
-import type { Driver } from "./types";
 import type { AnalysisResponse } from "./analysis";
-import type { ParsedIssue } from "./importer";
 
 const PETROL = "FF224957";
+const RED = "FFE43023";
+const GREEN = "FF1F7469";
+const MONEY = '"$" #,##0.00';
+const PCT = '0.00"%"';
+const GAP_FMT = '+0.00;-0.00;0.00';
 
-export interface SimulationExportInput {
-  cost: string | null;
-  idealPercent: string | null;
-  driver: Driver;
-  driverValue: string;
-  sourceInactive?: boolean;
-  sourceUnknown?: boolean;
-}
+// Coincide con la tolerancia de la UI: por debajo de esto es ruido de redondeo.
+const TOLERANCE_PP = 0.5;
 
 export interface ExportInput {
   queryDate: string;
   analysis: AnalysisResponse;
-  issues: ParsedIssue[];
-  simulations?: Record<string, SimulationExportInput>;
-  metadata: { batchId: string | null; filename: string | null; exportedBy: string; exportedAt: string };
+  metadata: { exportedBy: string; exportedAt: string };
 }
 
-const dec = (s: string | null): Decimal | null => (s === null || s.trim() === "" ? null : new Decimal(s));
+const num = (s: string | null): number | null => (s === null || s.trim() === "" ? null : Number(s));
+
+function gapPoints(actual: string | null, ideal: string | null): number | null {
+  const a = num(actual);
+  const i = num(ideal);
+  return a === null || i === null ? null : a - i;
+}
 
 export async function buildExportWorkbook(input: ExportInput): Promise<Buffer> {
   const { analysis, queryDate } = input;
@@ -35,91 +35,94 @@ export async function buildExportWorkbook(input: ExportInput): Promise<Buffer> {
   wb.creator = "Brugali · Costos y precios";
   wb.created = new Date(input.metadata.exportedAt);
 
-  // ---- Resultados ----
-  const results = wb.addWorksheet("Resultados");
-  results.addRow([
-    "Fecha consulta", "Lista", "Producto", "Descripción", "Sucursal",
-    "Costo vigente", "Vigencia costo", "Precio original", "Vigencia precio",
-    "Margen ideal %", "Conductor", "Precio simulado", "Ganancia $", "Ganancia %",
-    "Diferencia $", "Diferencia p.p.", "Termómetro", "Estado", "Advertencias",
-  ]);
+  // ---- Lista de precios ----
+  const list = wb.addWorksheet("Lista de precios");
+  list.columns = [
+    { header: "Producto", key: "code", width: 16 },
+    { header: "Descripción", key: "desc", width: 38 },
+    { header: "Costo", key: "cost", width: 14, style: { numFmt: MONEY } },
+    { header: "Precio vigente", key: "price", width: 16, style: { numFmt: MONEY } },
+    { header: "Vigencia", key: "validFrom", width: 12 },
+    { header: "Margen actual", key: "margin", width: 14, style: { numFmt: PCT } },
+    { header: "Objetivo", key: "ideal", width: 12, style: { numFmt: PCT } },
+    { header: "Desvío (pp)", key: "gap", width: 12, style: { numFmt: GAP_FMT } },
+    { header: "Origen", key: "origin", width: 14 },
+  ];
 
   for (const row of analysis.rows) {
-    const simInput = input.simulations?.[row.productCode];
-    let calc: ReturnType<typeof simulate> | null = null;
-    if (simInput && !row.simulationBlocked) {
-      calc = simulate({
-        cost: dec(simInput.cost),
-        driver: simInput.driver,
-        driverValue: new Decimal(simInput.driverValue || "0"),
-        idealPercent: dec(simInput.idealPercent),
-        sourceInactive: simInput.sourceInactive,
-        sourceUnknown: simInput.sourceUnknown,
-      });
+    const gap = gapPoints(row.actualGainPercent, row.idealPercent);
+    const added = list.addRow({
+      code: row.productCode,
+      desc: row.description ?? "",
+      cost: num(row.cost.value),
+      price: num(row.price.value),
+      validFrom: row.price.validFrom ?? "Sin vigencia",
+      margin: num(row.actualGainPercent),
+      ideal: num(row.idealPercent),
+      gap,
+      origin: row.price.origin === "manual" ? "Establecido" : "Importado",
+    });
+    // Color del desvío: rojo si está por debajo del objetivo (más allá de la
+    // tolerancia), verde si está en o por encima.
+    if (gap !== null) {
+      added.getCell("gap").font = { color: { argb: gap < -TOLERANCE_PP ? RED : GREEN }, bold: true };
     }
-    results.addRow([
-      queryDate,
-      row.priceListName,
-      row.productCode,
-      row.description,
-      row.branchCode,
-      row.cost.value,
-      row.cost.validFrom,
-      row.price.value,
-      row.price.validFrom,
-      row.idealPercent,
-      simInput ? simInput.driver : null,
-      calc ? toStr(calc.price) : null,
-      calc ? toStr(calc.gainAmount) : row.actualGainAmount,
-      calc ? toStr(calc.gainPercent) : row.actualGainPercent,
-      calc ? toStr(calc.gapAmount) : null,
-      calc ? toStr(calc.gapPercentagePoints) : null,
-      calc ? calc.thermometer : "neutral",
-      row.dataStatus,
-      row.warnings.join(", "),
-    ]);
+    if (row.price.origin === "manual") {
+      added.getCell("origin").font = { color: { argb: PETROL }, bold: true };
+    }
   }
 
-  // ---- Observaciones ----
-  const observations = wb.addWorksheet("Observaciones");
-  observations.addRow(["Tipo", "Severidad", "Hoja", "Clave", "Explicación", "Filas", "Valores"]);
-  for (const issue of input.issues) {
-    observations.addRow([
-      issue.issueType,
-      issue.severity,
-      issue.sheetName,
-      issue.businessKey,
-      issue.explanation,
-      issue.sourceRows.join(", "),
-      issue.values.map((v) => (v === null ? "" : v)).join(", "),
-    ]);
+  // ---- Para revisar ----
+  const review = wb.addWorksheet("Para revisar");
+  review.columns = [
+    { header: "Producto", key: "code", width: 16 },
+    { header: "Descripción", key: "desc", width: 38 },
+    { header: "Motivo", key: "reason", width: 30 },
+    { header: "Precio vigente", key: "price", width: 16, style: { numFmt: MONEY } },
+    { header: "Margen actual", key: "margin", width: 14, style: { numFmt: PCT } },
+    { header: "Objetivo", key: "ideal", width: 12, style: { numFmt: PCT } },
+  ];
+
+  for (const row of analysis.rows) {
+    const gap = gapPoints(row.actualGainPercent, row.idealPercent);
+    let reason: string | null = null;
+    if (row.dataStatus === "conflict") reason = "Conflicto de datos: revisar";
+    else if (num(row.cost.value) === null) reason = "Sin costo vigente";
+    else if (gap !== null && gap < -TOLERANCE_PP) reason = `Bajo objetivo (${gap.toFixed(2)} pp)`;
+    if (!reason) continue;
+
+    review.addRow({
+      code: row.productCode,
+      desc: row.description ?? "",
+      reason,
+      price: num(row.price.value),
+      margin: num(row.actualGainPercent),
+      ideal: num(row.idealPercent),
+    });
+  }
+  if (review.rowCount === 1) {
+    review.addRow({ code: "", desc: "", reason: "Sin observaciones: todo en orden." });
   }
 
-  // ---- Metadatos ----
-  const metadata = wb.addWorksheet("Metadatos");
-  metadata.addRow(["Campo", "Valor"]);
-  metadata.addRow(["Lote", input.metadata.batchId ?? ""]);
-  metadata.addRow(["Archivo", input.metadata.filename ?? ""]);
-  metadata.addRow(["Fecha de consulta", queryDate]);
-  metadata.addRow(["Lista", analysis.priceList.description]);
-  metadata.addRow(["Exportado por", input.metadata.exportedBy]);
-  metadata.addRow(["Fecha de exportación", input.metadata.exportedAt]);
-  metadata.addRow(["Uso", "Archivo analítico; no apto para carga automática en TOTVS."]);
+  // ---- Información (pie discreto) ----
+  const info = wb.addWorksheet("Información");
+  info.columns = [{ width: 22 }, { width: 40 }];
+  info.addRow(["Lista", analysis.priceList.description]);
+  info.addRow(["Vigente al", queryDate]);
+  info.addRow(["Exportado por", input.metadata.exportedBy]);
+  info.addRow(["Exportado el", new Date(input.metadata.exportedAt).toLocaleString("es-AR")]);
+  info.addRow(["Nota", "Archivo analítico. No apto para carga automática en TOTVS."]);
+  info.getColumn(1).font = { bold: true };
 
-  for (const sheet of wb.worksheets) {
+  // Estilo de encabezados de las dos hojas de datos.
+  for (const sheet of [list, review]) {
     sheet.views = [{ state: "frozen", ySplit: 1 }];
     const header = sheet.getRow(1);
+    header.height = 20;
     header.eachCell((cell) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PETROL } };
       cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
       cell.alignment = { vertical: "middle" };
-    });
-    sheet.columns.forEach((col) => {
-      let width = 12;
-      col.eachCell?.({ includeEmpty: false }, (cell) => {
-        width = Math.max(width, String(cell.value ?? "").length + 2);
-      });
-      col.width = Math.min(width, 42);
     });
   }
 
