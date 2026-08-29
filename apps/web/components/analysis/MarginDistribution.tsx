@@ -60,16 +60,13 @@ export function MarginDistribution({
           {/* línea base */}
           <line x1={PAD.left} y1={baselineY} x2={W - PAD.right} y2={baselineY} className="vizBaseline" />
 
-          {/* línea de objetivo (0 pp) */}
+          {/* divisoria del objetivo (0 pp): sutil, sin texto — el color ya lo comunica */}
           {zeroX !== null && (
-            <g>
-              <line x1={zeroX} y1={PAD.top - 4} x2={zeroX} y2={baselineY} className="vizTarget" />
-              <text x={zeroX + 4} y={PAD.top + 6} className="vizTargetLabel">Objetivo</text>
-            </g>
+            <line x1={zeroX} y1={PAD.top} x2={zeroX} y2={baselineY} className="vizTarget" />
           )}
 
           {histogram.buckets.map((b, i) => {
-            const h = b.count === 0 ? 0 : Math.max(3, (b.count / histogram.maxCount) * PLOT_H);
+            const h = b.count === 0 ? 0 : Math.max(3, (b.count / histogram.maxCount) * (PLOT_H - 8));
             const x = PAD.left + i * (plotW / n) + gap / 2;
             const y = baselineY - h;
             return (

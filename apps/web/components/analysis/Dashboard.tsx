@@ -26,6 +26,14 @@ import { CommandPalette, type Command } from "@/components/common/CommandPalette
 
 const today = new Date().toISOString().slice(0, 10);
 
+/** Nombre para mostrar: usa el nombre del perfil o lo deriva del email. */
+function displayName(user: { name: string; email: string }): string {
+  const n = (user.name ?? "").trim();
+  if (n && !n.includes("@")) return n;
+  const local = (user.email.split("@")[0] ?? "").replace(/[._-]+/g, " ").trim();
+  return local.replace(/\b\p{L}/gu, (c) => c.toUpperCase()) || user.email;
+}
+
 type ActiveView = "analysis" | "issues" | "import" | "simulations";
 type SortField = "product" | "cost" | "price" | "ideal" | "margin";
 type SortDir = "asc" | "desc";
@@ -181,16 +189,14 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
           <button className={activeView === "simulations" ? "active" : ""} onClick={() => { setActiveView("simulations"); setMobileOpen(false); }}><FlaskConical />Simulaciones</button>
           <button className={activeView === "import" ? "active" : ""} onClick={() => { setActiveView("import"); setMobileOpen(false); }}><Upload />Importar base</button>
         </nav>
-        <div className="sidebarNote"><i /><div><strong>Entorno privado</strong><small>Validación local · MVP</small></div></div>
-        <div className="userCard"><div className="avatar">{user.name.split(" ").map(part => part[0]).slice(0, 2).join("")}</div><div><strong>{user.name}</strong><small>{user.role.replace("_", " ")}</small></div><button onClick={logout} aria-label="Cerrar sesión"><LogOut size={17} /></button></div>
+        <div className="userCard"><div className="avatar">{displayName(user).split(" ").map(part => part[0]).slice(0, 2).join("")}</div><div><strong>{displayName(user)}</strong><small>{user.role.replace("_", " ")}</small></div><button onClick={logout} aria-label="Cerrar sesión"><LogOut size={17} /></button></div>
       </aside>
 
       <section className="workspace">
         <header className="topbar">
           <button className="mobileMenu" onClick={() => setMobileOpen(true)} aria-label="Abrir menú"><Menu /></button>
-          <div><span className="eyebrow">Tablero de costos y precios</span><h1>{viewTitles[activeView]}</h1></div>
+          <div><span className="eyebrow">Hola, {displayName(user).split(" ")[0]}</span><h1>{viewTitles[activeView]}</h1></div>
           <div className="topActions">
-            <span className="dataPulse"><i />Datos privados</span>
             <button className="iconButton densityToggle" onClick={toggleDense} aria-pressed={dense} title={dense ? "Vista cómoda" : "Vista densa"} aria-label={dense ? "Vista cómoda" : "Vista densa"}>
               {dense ? <Rows2 size={17} /> : <Rows3 size={17} />}
             </button>
@@ -310,26 +316,14 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
             <h2>¿Qué tan lejos está la cartera de su objetivo?</h2>
           </div>
           <MarginDistribution histogram={histogram} summary={summary} />
+          <p className="portfolioNote">
+            {summary.evaluated.toLocaleString("es-AR")} evaluados
+            {summary.withoutTarget > 0 && <> · {summary.withoutTarget.toLocaleString("es-AR")} sin objetivo</>}
+            {summary.worstGapPoints !== null && summary.worstGapPoints < -0.5 && (
+              <> · peor brecha {summary.worstGapPoints.toFixed(2)} pp</>
+            )}
+          </p>
         </div>
-        <aside className="portfolioAside">
-          <div className="portfolioStat">
-            <span>Evaluados</span>
-            <strong>{summary.evaluated.toLocaleString("es-AR")}</strong>
-            <small>de {summary.total.toLocaleString("es-AR")} productos visibles</small>
-          </div>
-          <div className="portfolioStat">
-            <span>Sin objetivo</span>
-            <strong>{summary.withoutTarget.toLocaleString("es-AR")}</strong>
-            <small>no entran en la distribución</small>
-          </div>
-          <div className="portfolioStat">
-            <span>Peor brecha</span>
-            <strong className={summary.worstGapPoints !== null && summary.worstGapPoints < -0.5 ? "neg" : ""}>
-              {summary.worstGapPoints === null ? "—" : `${summary.worstGapPoints > 0 ? "+" : ""}${summary.worstGapPoints.toFixed(2)} pp`}
-            </strong>
-            <small>distancia al objetivo más negativa</small>
-          </div>
-        </aside>
       </section>
 
       <ExceptionClusters summary={summary} active={exception} onToggle={setException} />
@@ -397,7 +391,6 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                 <SortTh label="Objetivo" field="ideal" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Margen actual" field="margin" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <th>Precio (tend.)</th>
-                <th>Estado</th>
                 <th />
               </tr>
             </thead>
@@ -416,7 +409,7 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                       />
                     </td>
                     <td>
-                      <strong>{row.product_code}</strong>
+                      <strong><StatusDot status={row.data_status} warnings={row.warnings} />{row.product_code}</strong>
                       <span>{row.description ?? "Sin descripción"}</span>
                       {hasSim && <span className="simBadge">Simulado</span>}
                     </td>
@@ -435,7 +428,6 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
                       <small>{formatMoney(row.actual_gain_amount)}</small>
                     </td>
                     <td><Sparkline values={trends[row.product_code]} /></td>
-                    <td><StatusBadge status={row.data_status} warnings={row.warnings} /></td>
                     <td><button aria-label={`Abrir ${row.product_code}`}><ChevronRight /></button></td>
                   </tr>
                 );
@@ -473,13 +465,11 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
   );
 }
 
-function StatusBadge({ status, warnings }: { status: string; warnings: string[] }) {
+function StatusDot({ status, warnings }: { status: string; warnings: string[] }) {
   const label = status === "ok" ? "Correcto" : status === "conflict" ? "Conflicto" : "Revisar";
+  const detail = warnings.map(item => warningLabels[item] ?? item).join(" · ");
   return (
-    <div className={`statusBadge ${status}`} title={warnings.map(item => warningLabels[item] ?? item).join(" · ")}>
-      {status === "ok" ? <CheckCircle2 /> : <AlertTriangle />}
-      <span>{label}</span>
-    </div>
+    <span className={`statusDot ${status}`} title={detail ? `${label} · ${detail}` : label} aria-label={label} />
   );
 }
 

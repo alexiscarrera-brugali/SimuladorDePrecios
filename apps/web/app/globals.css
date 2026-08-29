@@ -692,10 +692,12 @@ a {
 /* Cockpit del analista */
 
 .portfolioStrip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 14px;
   margin-bottom: 16px;
+}
+.portfolioNote {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 .vizCard {
   background: var(--surface);
@@ -1084,6 +1086,19 @@ tr.rowSelected { background: var(--petrol-soft); }
   border: none;
   color: var(--muted);
 }
+
+.statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.statusDot.ok { background: var(--teal); }
+.statusDot.warning { background: var(--yellow); }
+.statusDot.conflict { background: var(--red); }
 
 .statusBadge {
   display: inline-flex;
