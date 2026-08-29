@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowDownToLine, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, ChevronUp,
-  FileSpreadsheet, FlaskConical, LogOut, Menu, Rows2, Rows3, RefreshCw,
+  FileSpreadsheet, FlaskConical, HelpCircle, LogOut, Menu, Rows2, Rows3, RefreshCw,
   Search, ShieldAlert, Tag, TrendingDown, Upload, X,
 } from "lucide-react";
 import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIssue } from "@/lib/types";
@@ -23,6 +23,7 @@ import { BatchSimulator } from "@/components/analysis/BatchSimulator";
 import { Sparkline } from "@/components/analysis/Sparkline";
 import { CapabilityGate } from "@/components/common/CapabilityGate";
 import { CommandPalette, type Command } from "@/components/common/CommandPalette";
+import { Tour, type TourStep } from "@/components/common/Tour";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -33,6 +34,15 @@ function displayName(user: { name: string; email: string }): string {
   const local = (user.email.split("@")[0] ?? "").replace(/[._-]+/g, " ").trim();
   return local.replace(/\b\p{L}/gu, (c) => c.toUpperCase()) || user.email;
 }
+
+const TOUR_STEPS: TourStep[] = [
+  { title: "Bienvenido a la mesa de precios", body: "En un minuto te muestro cómo leer la cartera, simular precios y establecer la lista vigente. Podés saltarlo cuando quieras." },
+  { target: '[data-tour="nav-panel"]', title: "Panel", body: "El vistazo de salud de tu cartera: qué tan lejos están tus productos del margen objetivo y qué conviene revisar primero." },
+  { target: '[data-tour="nav-precios"]', title: "Precios", body: "La lista de precios vigentes. Buscás, ordenás y, al abrir un producto, simulás su precio y su margen." },
+  { title: "Simular no cambia el precio", body: "Una simulación es una propuesta: se guarda para comparar. Recién al elegir «Establecer como lista vigente» se actualiza el precio vigente (y podés restablecerlo)." },
+  { target: '[data-tour="nav-escenarios"]', title: "Escenarios", body: "Tus simulaciones y escenarios de cartera quedan guardados acá, con quién los creó y su impacto." },
+  { target: '[data-tour="topbar-help"]', title: "¿Lo repasás de nuevo?", body: "Desde este botón reabrís el tutorial cuando quieras. Y con «Exportar Excel» descargás la lista de precios lista para usar." },
+];
 
 type ActiveView = "panel" | "precios" | "escenarios" | "importar" | "observaciones";
 type SortField = "product" | "cost" | "price" | "ideal" | "margin";
@@ -54,7 +64,19 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dense, setDense] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const lastFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Auto la primera vez; se recuerda en el navegador (leído tras montar).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    try { if (localStorage.getItem("brugali:tour:v1") !== "1") setTourOpen(true); } catch { /* sin storage */ }
+  }, []);
+
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    try { localStorage.setItem("brugali:tour:v1", "1"); } catch { /* sin storage */ }
+  }, []);
 
   // Indicador activo del sidebar: se mide la posición del botón activo relativo
   // al <nav> y se desliza la burbuja marfil hacia él (acople al contenido).
@@ -226,6 +248,9 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
             <button className="iconButton paletteTrigger" onClick={() => setPaletteOpen(true)} aria-label="Abrir paleta de comandos" title="Buscar (Ctrl/Cmd + K)">
               <Search size={16} /><kbd>⌘K</kbd>
             </button>
+            <button className="iconButton" data-tour="topbar-help" onClick={() => setTourOpen(true)} aria-label="Ver tutorial" title="Ver tutorial">
+              <HelpCircle size={18} />
+            </button>
             {activeView === "precios" && <button className="secondaryButton" onClick={exportWorkbook}><ArrowDownToLine size={17} />Exportar Excel</button>}
           </div>
         </header>
@@ -253,6 +278,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
       </section>
       {selectedRow && <SimulatorPanel row={selectedRow} queryDate={queryDate} canPublish={user.role === "admin_importer"} onClose={closeSimulator} onChange={payload => setSimulations(current => ({ ...current, [payload.product_code]: payload }))} onPublished={() => { closeSimulator(); void loadAnalysis(); }} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} commands={commands} />}
+      {tourOpen && <Tour steps={TOUR_STEPS} onClose={closeTour} />}
     </main>
   );
 }
