@@ -48,20 +48,25 @@ export function BatchSimulator({
   productCodes,
   priceListCode,
   queryDate,
+  canPublish,
   onClose,
   onSaved,
+  onPublished,
 }: {
   productCodes: string[];
   priceListCode: string;
   queryDate: string;
+  canPublish: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onPublished: () => void;
 }) {
   const [ruleKind, setRuleKind] = useState<RuleKind>("to_target");
   const [ruleValue, setRuleValue] = useState("10");
   const [preview, setPreview] = useState<BatchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -125,6 +130,24 @@ export function BatchSimulator({
     if (!res.ok) return setError(data.detail ?? "No se pudo guardar el escenario");
     setSavedId(data.scenario_id ?? null);
     onSaved();
+  }
+
+  async function publishAll() {
+    const items = (preview?.items ?? [])
+      .filter((i) => !i.skipped && i.after_price !== null)
+      .map((i) => ({ product_code: i.product_code, branch_code: i.branch_code, price: i.after_price as string }));
+    if (items.length === 0) { setError("No hay precios simulados para establecer."); return; }
+    setPublishing(true);
+    setError("");
+    const res = await fetch("/api/prices/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price_list_code: priceListCode, query_date: queryDate, items }),
+    });
+    const data = await res.json();
+    setPublishing(false);
+    if (!res.ok) return setError(data.detail ?? "No se pudo establecer la lista vigente");
+    onPublished();
   }
 
   const agg = preview?.aggregate ?? null;
@@ -218,13 +241,24 @@ export function BatchSimulator({
           <input id="batchNote" type="text" maxLength={500} value={note} placeholder="Motivo o contexto del escenario" onChange={(e) => setNote(e.target.value)} />
         </section>
 
-        {savedId && <p className="simSaved" role="status">Escenario guardado. Queda registrado con autoría y comparativa contra el original.</p>}
+        {savedId && <p className="simSaved" role="status">Escenario guardado como propuesta. No cambia los precios vigentes.</p>}
 
-        <div className="simActions">
-          <button className="textButton" onClick={onClose}>Cerrar</button>
-          <button className="primaryButton" onClick={save} disabled={saving || loading || !agg || agg.evaluated === 0}>
-            <Save size={16} />{saving ? "Guardando…" : "Guardar escenario"}
-          </button>
+        <div className="simActions column">
+          <p className="actionHint">
+            <strong>Guardar escenario</strong> registra la propuesta.{" "}
+            {canPublish ? <><strong>Establecer como lista vigente</strong> aplica los precios simulados a la lista (nueva vigencia de hoy).</> : "Establecer la lista vigente requiere rol de importador."}
+          </p>
+          <div className="simActionsRow">
+            <button className="textButton" onClick={onClose}>Cerrar</button>
+            <button className="secondaryButton" onClick={save} disabled={saving || publishing || loading || !agg || agg.evaluated === 0}>
+              <Save size={16} />{saving ? "Guardando…" : "Guardar escenario"}
+            </button>
+            {canPublish && (
+              <button className="primaryButton" onClick={publishAll} disabled={publishing || saving || loading || !agg || agg.evaluated === 0}>
+                {publishing ? "Estableciendo…" : "Establecer como lista vigente"}
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </div>

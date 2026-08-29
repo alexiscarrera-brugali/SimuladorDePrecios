@@ -68,6 +68,7 @@ export async function getAnalysisData(
     validFrom: r.valid_from,
     sourceStatus: asStatus(r.source_status),
     sourceRow: r.source_row,
+    origin: r.origin ?? "import",
   }));
   const costs: CostRecord[] = (costsRes.data ?? []).map((r) => ({
     branchCode: r.branch_code,

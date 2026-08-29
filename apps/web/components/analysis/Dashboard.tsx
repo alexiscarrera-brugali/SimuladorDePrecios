@@ -226,12 +226,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
             ) : analysis && activeView === "panel" ? (
               <PanelContent analysis={analysis} loading={loading} exception={exception} onException={(key) => { setException(key); setActiveView("precios"); }} />
             ) : analysis && activeView === "precios" ? (
-              <PreciosContent analysis={analysis} loading={loading} onSelect={openRow} simulations={simulations} exception={exception} setException={setException} />
+              <PreciosContent analysis={analysis} loading={loading} onSelect={openRow} simulations={simulations} exception={exception} setException={setException} canPublish={user.role === "admin_importer"} onPublished={() => void loadAnalysis()} />
             ) : null}
           </>
         )}
       </section>
-      {selectedRow && <SimulatorPanel row={selectedRow} queryDate={queryDate} onClose={closeSimulator} onChange={payload => setSimulations(current => ({ ...current, [payload.product_code]: payload }))} />}
+      {selectedRow && <SimulatorPanel row={selectedRow} queryDate={queryDate} canPublish={user.role === "admin_importer"} onClose={closeSimulator} onChange={payload => setSimulations(current => ({ ...current, [payload.product_code]: payload }))} onPublished={() => { closeSimulator(); void loadAnalysis(); }} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} commands={commands} />}
     </main>
   );
@@ -290,7 +290,7 @@ function PanelContent({ analysis, loading, exception, onException }: { analysis:
   );
 }
 
-function PreciosContent({ analysis, loading, onSelect, simulations, exception, setException }: { analysis: AnalysisResponse; loading: boolean; onSelect: (row: AnalysisRow) => void; simulations: Record<string, SimulationPayload>; exception: ExceptionKey | null; setException: (key: ExceptionKey | null) => void }) {
+function PreciosContent({ analysis, loading, onSelect, simulations, exception, setException, canPublish, onPublished }: { analysis: AnalysisResponse; loading: boolean; onSelect: (row: AnalysisRow) => void; simulations: Record<string, SimulationPayload>; exception: ExceptionKey | null; setException: (key: ExceptionKey | null) => void; canPublish: boolean; onPublished: () => void }) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -432,6 +432,7 @@ function PreciosContent({ analysis, loading, onSelect, simulations, exception, s
                     </td>
                     <td>
                       {formatMoney(row.price.value)}
+                      {row.price.origin === "manual" && <span className="manualPill">Establecido</span>}
                       <small>{row.price.valid_from ?? "Sin vigencia"}</small>
                     </td>
                     <td>{formatPercent(row.ideal_percent)}</td>
@@ -470,8 +471,10 @@ function PreciosContent({ analysis, loading, onSelect, simulations, exception, s
           productCodes={[...selected]}
           priceListCode={analysis.price_list.code}
           queryDate={analysis.query_date}
+          canPublish={canPublish}
           onClose={() => setBatchOpen(false)}
-          onSaved={() => { /* el escenario queda en Simulaciones */ }}
+          onSaved={() => { /* el escenario queda en Escenarios */ }}
+          onPublished={() => { setBatchOpen(false); setSelected(new Set()); onPublished(); }}
         />
       )}
     </div>

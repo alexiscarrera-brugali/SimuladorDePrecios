@@ -33,6 +33,7 @@ export interface PriceRecord {
   validFrom: string;
   sourceStatus: SourceStatus;
   sourceRow: number;
+  origin?: string | null;
 }
 
 export interface CostRecord {

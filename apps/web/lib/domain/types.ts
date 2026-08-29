@@ -40,6 +40,8 @@ export interface EffectiveCandidate {
   sourceRow: number;
   batchId?: string | null;
   sourceStatus: SourceStatus;
+  /** 'import' (planilla) o 'manual' (establecido como vigente). */
+  origin?: string | null;
 }
 
 export interface EffectiveValue {
@@ -48,4 +50,6 @@ export interface EffectiveValue {
   status: "ok" | "warning" | "conflict" | "missing";
   candidates: EffectiveCandidate[];
   warnings: string[];
+  /** Origen del valor vigente elegido: 'import' | 'manual' | null. */
+  origin: string | null;
 }

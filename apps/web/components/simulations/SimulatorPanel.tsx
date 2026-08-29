@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Pencil, RotateCcw, ShieldAlert, X } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Pencil, RotateCcw, ShieldAlert, X } from "lucide-react";
 import type { AnalysisRow, Driver } from "@/lib/types";
 import type { SimulationPayload } from "@/lib/contracts";
 import { correctionSchema, simulationSchema } from "@/lib/contracts";
@@ -14,8 +14,10 @@ import { ProductListMatrix } from "./ProductListMatrix";
 type SimulatorPanelProps = {
   row: AnalysisRow;
   queryDate: string;
+  canPublish: boolean;
   onClose: () => void;
   onChange: (simulation: SimulationPayload) => void;
+  onPublished: () => void;
 };
 
 type ServerResult = {
@@ -79,7 +81,7 @@ function EditableField({
   );
 }
 
-export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorPanelProps) {
+export function SimulatorPanel({ row, queryDate, canPublish, onClose, onChange, onPublished }: SimulatorPanelProps) {
   const blocked = row.simulation_blocked;
 
   const [tab, setTab] = useState<"simular" | "analisis">("simular");
@@ -88,6 +90,8 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
   const [serverResult, setServerResult] = useState<ServerResult | null>(null);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState("");
   const closeRef = useRef<HTMLButtonElement>(null);
 
   // Editable fields
@@ -187,6 +191,43 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
     }
     setServerResult(data);
     onChange(payload);
+  }
+
+  const simulatedPrice = serverResult?.price ?? (sim?.price ? sim.price.toFixed() : null);
+  const isManual = row.price.origin === "manual";
+
+  async function publish() {
+    if (simulatedPrice === null) { setPublishMsg("Simulá un precio válido antes de establecerlo."); return; }
+    setPublishMsg(""); setPublishing(true);
+    const response = await fetch("/api/prices/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        price_list_code: row.price_list_code,
+        query_date: queryDate,
+        items: [{ product_code: row.product_code, branch_code: row.branch_code, price: simulatedPrice }],
+      }),
+    });
+    const data = await response.json();
+    setPublishing(false);
+    if (!response.ok) { setPublishMsg(data.detail ?? "No se pudo establecer la lista vigente"); return; }
+    onPublished();
+  }
+
+  async function resetPrice() {
+    setPublishMsg(""); setPublishing(true);
+    const response = await fetch("/api/prices/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        price_list_code: row.price_list_code,
+        items: [{ product_code: row.product_code, branch_code: row.branch_code }],
+      }),
+    });
+    const data = await response.json();
+    setPublishing(false);
+    if (!response.ok) { setPublishMsg(data.detail ?? "No se pudo restablecer"); return; }
+    onPublished();
   }
 
   const thermometer = serverResult?.thermometer ?? sim?.thermometer ?? "neutral";
@@ -339,13 +380,33 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
             )}
 
             {saveError && <div className="formError" role="alert"><AlertTriangle size={16} />{saveError}</div>}
-            {serverResult && <p className="simSaved" role="status">Simulación guardada. El servidor recalculó y su resultado prevalece.</p>}
+            {serverResult && <p className="simSaved" role="status">Simulación guardada como propuesta. No cambia el precio vigente.</p>}
+            {publishMsg && <div className="formError" role="alert"><AlertTriangle size={16} />{publishMsg}</div>}
 
-            <div className="simActions">
-              <button className="textButton" onClick={onClose}>Cerrar</button>
-              <button className="primaryButton" onClick={save} disabled={saving || !!calcError}>
-                {saving ? "Guardando…" : "Guardar simulación"}
-              </button>
+            {isManual && (
+              <div className="manualBanner" role="status">
+                <BadgeCheck size={15} />
+                <span>Precio establecido a mano. Podés volver al precio importado.</span>
+                <button className="linkButton" onClick={resetPrice} disabled={publishing}>Restablecer</button>
+              </div>
+            )}
+
+            <div className="simActions column">
+              <p className="actionHint">
+                <strong>Guardar simulación</strong> registra una propuesta sin tocar el precio vigente.{" "}
+                {canPublish ? <><strong>Establecer como lista vigente</strong> reemplaza el precio vigente con una nueva vigencia de hoy.</> : "Establecer la lista vigente requiere rol de importador."}
+              </p>
+              <div className="simActionsRow">
+                <button className="textButton" onClick={onClose}>Cerrar</button>
+                <button className="secondaryButton" onClick={save} disabled={saving || !!calcError}>
+                  {saving ? "Guardando…" : "Guardar simulación"}
+                </button>
+                {canPublish && (
+                  <button className="primaryButton" onClick={publish} disabled={publishing || !!calcError || simulatedPrice === null}>
+                    {publishing ? "Estableciendo…" : "Establecer como lista vigente"}
+                  </button>
+                )}
+              </div>
             </div>
           </>
         )}

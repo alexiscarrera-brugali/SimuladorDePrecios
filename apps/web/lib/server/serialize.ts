@@ -47,6 +47,7 @@ export function analysisToJSON(res: AnalysisResponse) {
         valid_from: row.price.validFrom,
         status: row.price.status,
         warnings: row.price.warnings,
+        origin: row.price.origin,
       },
       cost: {
         value: row.cost.value,

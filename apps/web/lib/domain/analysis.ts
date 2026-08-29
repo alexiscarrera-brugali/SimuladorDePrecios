@@ -23,6 +23,7 @@ export interface EffectiveView {
   validFrom: string | null;
   status: string;
   warnings: string[];
+  origin: string | null;
 }
 
 export interface AnalysisRow {
@@ -66,15 +67,17 @@ function effView(value: EffectiveValue): EffectiveView {
     validFrom: value.validFrom,
     status: value.status,
     warnings: [...value.warnings],
+    origin: value.origin,
   };
 }
 
-function toCandidate(item: { value: Decimal | null; validFrom: string; sourceRow: number; sourceStatus: EffectiveCandidate["sourceStatus"] }): EffectiveCandidate {
+function toCandidate(item: { value: Decimal | null; validFrom: string; sourceRow: number; sourceStatus: EffectiveCandidate["sourceStatus"]; origin?: string | null }): EffectiveCandidate {
   return {
     value: item.value,
     validFrom: item.validFrom,
     sourceRow: item.sourceRow,
     sourceStatus: item.sourceStatus,
+    origin: item.origin ?? null,
   };
 }
 

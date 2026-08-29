@@ -49,3 +49,25 @@ export const batchSchema = z
   );
 
 export type BatchPayload = z.infer<typeof batchSchema>;
+
+const productRef = z.object({
+  product_code: z.string().min(1),
+  branch_code: z.string().min(1),
+});
+
+export const publishSchema = z.object({
+  price_list_code: z.string().min(1),
+  query_date: z.string().date(),
+  items: z
+    .array(productRef.extend({
+      price: z.string().refine((v) => v.trim() !== "" && !Number.isNaN(Number(v)) && Number(v) >= 0, "Precio inválido"),
+    }))
+    .min(1, "Elegí al menos un producto"),
+});
+export type PublishPayload = z.infer<typeof publishSchema>;
+
+export const resetSchema = z.object({
+  price_list_code: z.string().min(1),
+  items: z.array(productRef).min(1, "Elegí al menos un producto"),
+});
+export type ResetPayload = z.infer<typeof resetSchema>;

@@ -11,6 +11,7 @@ export interface EffectiveValue {
   valid_from: string | null;
   status: string;
   warnings: string[];
+  origin?: string | null;
 }
 
 export interface AnalysisRow {

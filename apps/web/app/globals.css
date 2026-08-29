@@ -2014,6 +2014,43 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
   align-items: center;
   gap: 10px;
 }
+.simActions.column { flex-direction: column; align-items: stretch; }
+.actionHint { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.5; }
+.actionHint strong { color: var(--muted-strong); }
+.simActionsRow { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.manualBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--petrol-soft);
+  color: var(--petrol);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.manualBanner .linkButton { margin-left: auto; }
+.linkButton {
+  background: none;
+  border: none;
+  color: var(--petrol);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.manualPill {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--petrol);
+  background: var(--petrol-soft);
+  padding: 1px 7px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
 
 .simHistory {
   border-top: 1px solid var(--border);
