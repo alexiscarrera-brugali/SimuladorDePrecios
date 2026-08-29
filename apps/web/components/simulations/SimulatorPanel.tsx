@@ -82,6 +82,7 @@ function EditableField({
 export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorPanelProps) {
   const blocked = row.simulation_blocked;
 
+  const [tab, setTab] = useState<"simular" | "analisis">("simular");
   const [driver, setDriver] = useState<Driver>("price");
   const [driverValue, setDriverValue] = useState<string>(() => row.price.value ?? "0");
   const [serverResult, setServerResult] = useState<ServerResult | null>(null);
@@ -212,6 +213,13 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
           </button>
         </header>
 
+        <div className="simTabs" role="tablist">
+          <button role="tab" aria-selected={tab === "simular"} className={tab === "simular" ? "active" : ""} onClick={() => setTab("simular")}>Simular</button>
+          <button role="tab" aria-selected={tab === "analisis"} className={tab === "analisis" ? "active" : ""} onClick={() => setTab("analisis")}>Análisis</button>
+        </div>
+
+        {tab === "simular" && (
+        <>
         <div className="simContext">
           <EditableField
             label="Costo vigente"
@@ -341,7 +349,11 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
             </div>
           </>
         )}
+        </>
+        )}
 
+        {tab === "analisis" && (
+        <>
         <section className="simMatrix">
           <span className="fieldLabel">Margen por lista de precio</span>
           <ProductListMatrix productCode={row.product_code} queryDate={queryDate} currentListCode={row.price_list_code} />
@@ -351,6 +363,8 @@ export function SimulatorPanel({ row, queryDate, onClose, onChange }: SimulatorP
           <span className="fieldLabel">Histórico de precio y costo</span>
           <HistoryChart productCode={row.product_code} priceListCode={row.price_list_code} />
         </section>
+        </>
+        )}
       </aside>
     </div>
   );

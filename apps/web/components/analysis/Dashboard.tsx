@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowDownToLine, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, ChevronUp,
   FileSpreadsheet, FlaskConical, LogOut, Menu, Rows2, Rows3, RefreshCw,
-  Search, ShieldAlert, TrendingDown, Upload, X,
+  Search, ShieldAlert, Tag, TrendingDown, Upload, X,
 } from "lucide-react";
 import type { AnalysisResponse, AnalysisRow, PreviewResult, PriceList, QualityIssue } from "@/lib/types";
 import type { SimulationPayload } from "@/lib/contracts";
@@ -34,7 +34,7 @@ function displayName(user: { name: string; email: string }): string {
   return local.replace(/\b\p{L}/gu, (c) => c.toUpperCase()) || user.email;
 }
 
-type ActiveView = "analysis" | "issues" | "import" | "simulations";
+type ActiveView = "panel" | "precios" | "escenarios" | "importar" | "observaciones";
 type SortField = "product" | "cost" | "price" | "ideal" | "margin";
 type SortDir = "asc" | "desc";
 
@@ -43,10 +43,10 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   const [lists, setLists] = useState(initialPriceLists);
   const [selectedList, setSelectedList] = useState(initialPriceLists[0]?.code ?? "");
   const [queryDate, setQueryDate] = useState(today);
-  const [status, setStatus] = useState("");
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [issues, setIssues] = useState<QualityIssue[]>([]);
-  const [activeView, setActiveView] = useState<ActiveView>(initialPriceLists.length ? "analysis" : "import");
+  const [activeView, setActiveView] = useState<ActiveView>(initialPriceLists.length ? "panel" : "importar");
+  const [exception, setException] = useState<ExceptionKey | null>(null);
   const [selectedRow, setSelectedRow] = useState<AnalysisRow | null>(null);
   const [simulations, setSimulations] = useState<Record<string, SimulationPayload>>({});
   const [loading, setLoading] = useState(false);
@@ -96,13 +96,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
     await Promise.resolve();
     setLoading(true); setError("");
     const params = new URLSearchParams({ date: queryDate, price_list: selectedList });
-    if (status) params.set("status", status);
     const response = await fetch(`/api/analysis?${params}`);
     const data = await response.json();
     setLoading(false);
     if (!response.ok) return setError(data.detail ?? "No pudimos consultar el análisis");
     setAnalysis(data);
-  }, [queryDate, selectedList, status]);
+  }, [queryDate, selectedList]);
 
   const loadIssues = useCallback(async () => {
     await Promise.resolve();
@@ -111,12 +110,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   }, []);
 
   useEffect(() => {
-    if (activeView !== "analysis") return;
+    if (activeView !== "panel" && activeView !== "precios") return;
     const timer = window.setTimeout(() => void loadAnalysis(), 0);
     return () => window.clearTimeout(timer);
   }, [activeView, loadAnalysis]);
   useEffect(() => {
-    if (activeView !== "issues") return;
+    if (activeView !== "observaciones") return;
     const timer = window.setTimeout(() => void loadIssues(), 0);
     return () => window.clearTimeout(timer);
   }, [activeView, loadIssues]);
@@ -131,7 +130,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
     const response = await fetch("/api/price-lists");
     if (response.ok) {
       const nextLists: PriceList[] = await response.json();
-      setLists(nextLists); setSelectedList(nextLists[0]?.code ?? ""); setActiveView("analysis");
+      setLists(nextLists); setSelectedList(nextLists[0]?.code ?? ""); setActiveView("panel");
     }
   }
 
@@ -149,22 +148,24 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   }
 
   const viewTitles: Record<ActiveView, string> = {
-    analysis: "Análisis comercial",
-    issues: "Observaciones de datos",
-    import: "Nueva importación",
-    simulations: "Historial de simulaciones",
+    panel: "Panel de cartera",
+    precios: "Precios vigentes",
+    escenarios: "Escenarios y simulaciones",
+    importar: "Nueva importación",
+    observaciones: "Observaciones de datos",
   };
 
   const commands = useMemo<Command[]>(() => {
     const cmds: Command[] = [
-      { id: "view-analysis", label: "Ir a Análisis", group: "Vistas", run: () => setActiveView("analysis") },
-      { id: "view-issues", label: "Ir a Observaciones", group: "Vistas", run: () => setActiveView("issues") },
-      { id: "view-simulations", label: "Ir a Simulaciones", group: "Vistas", run: () => setActiveView("simulations") },
-      { id: "view-import", label: "Ir a Importar base", group: "Vistas", run: () => setActiveView("import") },
+      { id: "view-panel", label: "Ir a Panel", group: "Vistas", run: () => setActiveView("panel") },
+      { id: "view-precios", label: "Ir a Precios", group: "Vistas", run: () => setActiveView("precios") },
+      { id: "view-escenarios", label: "Ir a Escenarios", group: "Vistas", run: () => setActiveView("escenarios") },
+      { id: "view-observaciones", label: "Ir a Observaciones", group: "Vistas", run: () => setActiveView("observaciones") },
+      { id: "view-importar", label: "Ir a Importar base", group: "Vistas", run: () => setActiveView("importar") },
       { id: "toggle-dense", label: dense ? "Desactivar modo denso" : "Activar modo denso", group: "Vistas", run: toggleDense },
     ];
     for (const list of lists) {
-      cmds.push({ id: `list-${list.code}`, label: `Lista ${list.code} · ${list.description}`, hint: "Cambiar lista", group: "Listas de precio", run: () => { setSelectedList(list.code); setActiveView("analysis"); } });
+      cmds.push({ id: `list-${list.code}`, label: `Lista ${list.code} · ${list.description}`, hint: "Cambiar lista", group: "Listas de precio", run: () => { setSelectedList(list.code); setActiveView("precios"); } });
     }
     for (const row of analysis?.rows ?? []) {
       cmds.push({
@@ -172,7 +173,7 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
         label: `${row.product_code} · ${row.description ?? "Sin descripción"}`,
         hint: "Abrir simulador",
         group: "Productos",
-        run: () => { setActiveView("analysis"); setSelectedRow(row); },
+        run: () => { setActiveView("precios"); setSelectedRow(row); },
       });
     }
     return cmds;
@@ -184,10 +185,12 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
         <button className="mobileClose" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú"><X /></button>
         <div className="sidebarBrand"><Image src="/brand/brugali-logo.jpg" alt="Brugali" width={136} height={136} priority /></div>
         <nav>
-          <button className={activeView === "analysis" ? "active" : ""} onClick={() => { setActiveView("analysis"); setMobileOpen(false); }}><BarChart3 />Análisis</button>
-          <button className={activeView === "issues" ? "active" : ""} onClick={() => { setActiveView("issues"); setMobileOpen(false); }}><ShieldAlert />Observaciones{issues.length > 0 && <span>{issues.length}</span>}</button>
-          <button className={activeView === "simulations" ? "active" : ""} onClick={() => { setActiveView("simulations"); setMobileOpen(false); }}><FlaskConical />Simulaciones</button>
-          <button className={activeView === "import" ? "active" : ""} onClick={() => { setActiveView("import"); setMobileOpen(false); }}><Upload />Importar base</button>
+          <button className={activeView === "panel" ? "active" : ""} onClick={() => { setActiveView("panel"); setMobileOpen(false); }}><BarChart3 />Panel</button>
+          <button className={activeView === "precios" ? "active" : ""} onClick={() => { setActiveView("precios"); setMobileOpen(false); }}><Tag />Precios</button>
+          <button className={activeView === "escenarios" ? "active" : ""} onClick={() => { setActiveView("escenarios"); setMobileOpen(false); }}><FlaskConical />Escenarios</button>
+          <span className="navGroupLabel">Datos</span>
+          <button className={`navSecondary ${activeView === "importar" ? "active" : ""}`} onClick={() => { setActiveView("importar"); setMobileOpen(false); }}><Upload size={16} />Importar base</button>
+          <button className={`navSecondary ${activeView === "observaciones" ? "active" : ""}`} onClick={() => { setActiveView("observaciones"); setMobileOpen(false); }}><ShieldAlert size={16} />Observaciones{issues.length > 0 && <span>{issues.length}</span>}</button>
         </nav>
         <div className="userCard"><div className="avatar">{displayName(user).split(" ").map(part => part[0]).slice(0, 2).join("")}</div><div><strong>{displayName(user)}</strong><small>{user.role.replace("_", " ")}</small></div><button onClick={logout} aria-label="Cerrar sesión"><LogOut size={17} /></button></div>
       </aside>
@@ -203,23 +206,28 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
             <button className="iconButton paletteTrigger" onClick={() => setPaletteOpen(true)} aria-label="Abrir paleta de comandos" title="Buscar (Ctrl/Cmd + K)">
               <Search size={16} /><kbd>⌘K</kbd>
             </button>
-            {activeView === "analysis" && <button className="secondaryButton" onClick={exportWorkbook}><ArrowDownToLine size={17} />Exportar Excel</button>}
+            {activeView === "precios" && <button className="secondaryButton" onClick={exportWorkbook}><ArrowDownToLine size={17} />Exportar Excel</button>}
           </div>
         </header>
 
         {error && <div className="pageError"><AlertTriangle />{error}<button onClick={() => setError("")}><X size={16} /></button></div>}
-        {activeView === "import" && <ImportView onCommitted={refreshLists} />}
-        {activeView === "issues" && <IssuesView issues={issues} loading={loading} />}
-        {activeView === "simulations" && <SimulationHistory />}
-        {activeView === "analysis" && (
+        {activeView === "importar" && <ImportView onCommitted={refreshLists} />}
+        {activeView === "observaciones" && <IssuesView issues={issues} loading={loading} />}
+        {activeView === "escenarios" && <SimulationHistory />}
+        {(activeView === "panel" || activeView === "precios") && (
           <>
             <section className="filterBar">
               <label>Lista<select value={selectedList} onChange={event => setSelectedList(event.target.value)}>{lists.map(list => <option key={list.code} value={list.code}>{list.code} · {list.description}</option>)}</select></label>
               <label>Fecha de consulta<input type="date" value={queryDate} onChange={event => setQueryDate(event.target.value)} /></label>
-              <label>Estado<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos, sin ocultar</option><option value="ok">Correctos</option><option value="warning">Con advertencias</option><option value="conflict">Conflictos</option></select></label>
               <button className="iconButton" onClick={loadAnalysis} aria-label="Actualizar"><RefreshCw className={loading ? "spin" : ""} /></button>
             </section>
-            {!lists.length ? <EmptyState onImport={() => setActiveView("import")} /> : analysis && <AnalysisContent analysis={analysis} loading={loading} onSelect={openRow} simulations={simulations} />}
+            {!lists.length ? (
+              <EmptyState onImport={() => setActiveView("importar")} />
+            ) : analysis && activeView === "panel" ? (
+              <PanelContent analysis={analysis} loading={loading} exception={exception} onException={(key) => { setException(key); setActiveView("precios"); }} />
+            ) : analysis && activeView === "precios" ? (
+              <PreciosContent analysis={analysis} loading={loading} onSelect={openRow} simulations={simulations} exception={exception} setException={setException} />
+            ) : null}
           </>
         )}
       </section>
@@ -239,11 +247,53 @@ function SortTh({ label, field, sortField, sortDir, onSort }: { label: string; f
   );
 }
 
-function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysis: AnalysisResponse; loading: boolean; onSelect: (row: AnalysisRow) => void; simulations: Record<string, SimulationPayload> }) {
+function PanelContent({ analysis, loading, exception, onException }: { analysis: AnalysisResponse; loading: boolean; exception: ExceptionKey | null; onException: (key: ExceptionKey | null) => void }) {
+  const summary = useMemo(() => portfolioSummary(analysis.rows), [analysis.rows]);
+  const histogram = useMemo(() => bucketGaps(analysis.rows), [analysis.rows]);
+
+  return (
+    <div className={loading ? "content loading" : "content"}>
+      <section className="portfolioStrip">
+        <div className="vizCard">
+          <div className="vizHeading">
+            <span className="eyebrow">Salud de cartera</span>
+            <h2>¿Qué tan lejos está la cartera de su objetivo?</h2>
+          </div>
+          <MarginDistribution histogram={histogram} summary={summary} />
+          <p className="portfolioNote">
+            {summary.evaluated.toLocaleString("es-AR")} evaluados
+            {summary.withoutTarget > 0 && <> · {summary.withoutTarget.toLocaleString("es-AR")} sin objetivo</>}
+            {summary.worstGapPoints !== null && summary.worstGapPoints < -0.5 && (
+              <> · peor brecha {summary.worstGapPoints.toFixed(2)} pp</>
+            )}
+          </p>
+        </div>
+      </section>
+
+      <ExceptionClusters summary={summary} active={exception} onToggle={onException} />
+
+      <section className="capRow">
+        <CapabilityGate
+          enabled={analysis.capabilities.has_volume}
+          title="Margen ponderado por ingreso"
+          unlocks="Pondera la salud de la cartera por lo que cada producto factura y habilita el análisis ABC/Pareto."
+          requirement="volumen de ventas"
+        />
+        <CapabilityGate
+          enabled={analysis.capabilities.has_category}
+          title="Segmentación por rubro"
+          unlocks="Agrupa y compara los márgenes por familia o rubro de producto."
+          requirement="categoría/rubro"
+        />
+      </section>
+    </div>
+  );
+}
+
+function PreciosContent({ analysis, loading, onSelect, simulations, exception, setException }: { analysis: AnalysisResponse; loading: boolean; onSelect: (row: AnalysisRow) => void; simulations: Record<string, SimulationPayload>; exception: ExceptionKey | null; setException: (key: ExceptionKey | null) => void }) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [exception, setException] = useState<ExceptionKey | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchOpen, setBatchOpen] = useState(false);
 
@@ -263,9 +313,6 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
       setSortDir("asc");
     }
   }
-
-  const summary = useMemo(() => portfolioSummary(analysis.rows), [analysis.rows]);
-  const histogram = useMemo(() => bucketGaps(analysis.rows), [analysis.rows]);
 
   const [trends, setTrends] = useState<Record<string, number[]>>({});
   useEffect(() => {
@@ -309,45 +356,11 @@ function AnalysisContent({ analysis, loading, onSelect, simulations }: { analysi
 
   return (
     <div className={loading ? "content loading" : "content"}>
-      <section className="portfolioStrip">
-        <div className="vizCard">
-          <div className="vizHeading">
-            <span className="eyebrow">Salud de cartera</span>
-            <h2>¿Qué tan lejos está la cartera de su objetivo?</h2>
-          </div>
-          <MarginDistribution histogram={histogram} summary={summary} />
-          <p className="portfolioNote">
-            {summary.evaluated.toLocaleString("es-AR")} evaluados
-            {summary.withoutTarget > 0 && <> · {summary.withoutTarget.toLocaleString("es-AR")} sin objetivo</>}
-            {summary.worstGapPoints !== null && summary.worstGapPoints < -0.5 && (
-              <> · peor brecha {summary.worstGapPoints.toFixed(2)} pp</>
-            )}
-          </p>
-        </div>
-      </section>
-
-      <ExceptionClusters summary={summary} active={exception} onToggle={setException} />
-
-      <section className="capRow">
-        <CapabilityGate
-          enabled={analysis.capabilities.has_volume}
-          title="Margen ponderado por ingreso"
-          unlocks="Pondera la salud de la cartera por lo que cada producto factura y habilita el análisis ABC/Pareto."
-          requirement="volumen de ventas"
-        />
-        <CapabilityGate
-          enabled={analysis.capabilities.has_category}
-          title="Segmentación por rubro"
-          unlocks="Agrupa y compara los márgenes por familia o rubro de producto."
-          requirement="categoría/rubro"
-        />
-      </section>
-
       <section className="tableCard">
         <div className="cardHeading">
           <div>
             <span className="eyebrow">{analysis.price_list.description}</span>
-            <h2>Precio, costo y objetivo vigentes</h2>
+            <h2>Lista de precios vigentes</h2>
             {filterLabel && (
               <button className="activeFilterChip" onClick={() => setException(null)}>
                 {filterLabel} · {rows.length} <X size={13} />

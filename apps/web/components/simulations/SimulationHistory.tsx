@@ -139,56 +139,30 @@ export function SimulationHistory() {
       )}
 
       {rows.length > 0 && (
-        <div className="tableCard" style={{ marginTop: 24 }}>
-          <div className="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Lista</th>
-                  <th>Fecha consulta</th>
-                  <th>Costo original</th>
-                  <th>Conductor</th>
-                  <th>Precio simulado</th>
-                  <th>Ganancia %</th>
-                  <th>Resultado</th>
-                  <th>Registrado por</th>
-                  <th>Fecha registro</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td><strong>{row.product_code}</strong></td>
-                    <td><span>{row.price_list_code}</span></td>
-                    <td><span>{row.query_date}</span></td>
-                    <td>
-                      {formatMoney(row.original_cost)}
-                      {row.original_ideal_percent && (
-                        <small>Obj. {formatPercent(row.original_ideal_percent)}</small>
-                      )}
-                    </td>
-                    <td><span>{driverLabel[row.driver] ?? row.driver}</span></td>
-                    <td><strong>{formatMoney(row.simulated_price)}</strong></td>
-                    <td>
-                      {formatPercent(row.simulated_gain_percent)}
-                      <small>{formatMoney(row.simulated_gain_amount)}</small>
-                    </td>
-                    <td>
-                      <ThermometerDot t={row.thermometer} />
-                      <span style={{ fontSize: 12 }}>
-                        {row.thermometer === "green" ? "Sobre objetivo" : row.thermometer === "red" ? "Bajo objetivo" : "Sin objetivo"}
-                      </span>
-                    </td>
-                    <td><span>{row.actor_email}</span></td>
-                    <td>
-                      <span>{new Date(row.created_at).toLocaleDateString("es-AR")}</span>
-                      <small>{new Date(row.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</small>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="simSavedList">
+          <h3 className="scenarioListTitle">Simulaciones por producto</h3>
+          <div className="scenarioGrid">
+            {rows.map((row) => (
+              <article key={row.id} className="scenarioCard">
+                <div className="scenarioHead">
+                  <span className="scenarioRule">{row.product_code}</span>
+                  <span className="scenarioMeta">Lista {row.price_list_code} · {driverLabel[row.driver] ?? row.driver}</span>
+                </div>
+                <div className="simSavedPrice">
+                  <strong>{formatMoney(row.simulated_price)}</strong>
+                  <span className="simSavedGain">{formatPercent(row.simulated_gain_percent)}</span>
+                </div>
+                <div className="scenarioChips">
+                  <span className={`scenarioChip ${row.thermometer === "green" ? "green" : row.thermometer === "red" ? "red" : "muted"}`}>
+                    <ThermometerDot t={row.thermometer} />
+                    {row.thermometer === "green" ? "Sobre objetivo" : row.thermometer === "red" ? "Bajo objetivo" : "Sin objetivo"}
+                  </span>
+                </div>
+                <small className="scenarioDate">
+                  {row.actor_email} · {new Date(row.created_at).toLocaleDateString("es-AR")} {new Date(row.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                </small>
+              </article>
+            ))}
           </div>
         </div>
       )}

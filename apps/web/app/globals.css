@@ -451,6 +451,19 @@ a {
   border-radius: 999px;
   padding: 1px 8px;
 }
+.navGroupLabel {
+  margin: 14px 12px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sidebar nav button.navSecondary {
+  font-size: 13px;
+  padding: 8px 12px;
+  opacity: 0.85;
+}
+.sidebar nav button.navSecondary svg { width: 16px; height: 16px; }
 .sidebarNote {
   margin-top: auto;
   display: flex;
@@ -1488,6 +1501,30 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
 @keyframes slide {
   from { transform: translateX(24px); opacity: 0.6; }
 }
+.simTabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+.simTabs button {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.simTabs button.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
 .simHeader {
   display: flex;
   align-items: flex-start;
@@ -1941,6 +1978,11 @@ tr.hasSim { background: rgba(55, 155, 140, 0.04); }
 .scenarioChip.muted { background: var(--surface-sunken); color: var(--muted); }
 .scenarioNote { font-size: 12px; color: var(--muted-strong); margin: 0; font-style: italic; }
 .scenarioDate { font-size: 11px; color: var(--muted); }
+
+.simSavedList { margin-top: 24px; }
+.simSavedPrice { display: flex; align-items: baseline; gap: 10px; }
+.simSavedPrice strong { font-family: var(--font-display); font-size: 22px; color: var(--ink); }
+.simSavedGain { font-size: 14px; font-weight: 600; color: var(--muted-strong); }
 
 /* Historial de simulaciones */
 .historyPage {
