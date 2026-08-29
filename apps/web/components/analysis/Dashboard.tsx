@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowDownToLine, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, ChevronUp,
   FileSpreadsheet, FlaskConical, LogOut, Menu, Rows2, Rows3, RefreshCw,
@@ -55,6 +55,25 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dense, setDense] = useState(false);
   const lastFocus = useRef<HTMLElement | null>(null);
+
+  // Indicador activo del sidebar: se mide la posición del botón activo relativo
+  // al <nav> y se desliza la burbuja marfil hacia él (acople al contenido).
+  const navRef = useRef<HTMLElement | null>(null);
+  const navButtons = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+
+  const measureIndicator = useCallback(() => {
+    const btn = navButtons.current[activeView];
+    if (!btn) { setIndicator(null); return; }
+    setIndicator({ top: btn.offsetTop, height: btn.offsetHeight });
+  }, [activeView]);
+
+  useLayoutEffect(() => { measureIndicator(); }, [measureIndicator, issues.length, mobileOpen]);
+
+  useEffect(() => {
+    window.addEventListener("resize", measureIndicator);
+    return () => window.removeEventListener("resize", measureIndicator);
+  }, [measureIndicator]);
 
   useEffect(() => {
     // Se lee la preferencia después de montar para no romper la hidratación
@@ -184,13 +203,14 @@ export function Dashboard({ user, initialPriceLists }: { user: { name: string; r
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
         <button className="mobileClose" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú"><X /></button>
         <div className="sidebarBrand"><Image src="/brand/brugali-logo.jpg" alt="Brugali" width={136} height={136} priority /></div>
-        <nav>
-          <button className={activeView === "panel" ? "active" : ""} onClick={() => { setActiveView("panel"); setMobileOpen(false); }}><BarChart3 />Panel</button>
-          <button className={activeView === "precios" ? "active" : ""} onClick={() => { setActiveView("precios"); setMobileOpen(false); }}><Tag />Precios</button>
-          <button className={activeView === "escenarios" ? "active" : ""} onClick={() => { setActiveView("escenarios"); setMobileOpen(false); }}><FlaskConical />Escenarios</button>
+        <nav ref={navRef}>
+          {indicator && <span className="navIndicator" aria-hidden="true" style={{ transform: `translateY(${indicator.top}px)`, height: indicator.height }} />}
+          <button ref={el => { navButtons.current.panel = el; }} data-tour="nav-panel" className={activeView === "panel" ? "active" : ""} onClick={() => { setActiveView("panel"); setMobileOpen(false); }}><BarChart3 />Panel</button>
+          <button ref={el => { navButtons.current.precios = el; }} data-tour="nav-precios" className={activeView === "precios" ? "active" : ""} onClick={() => { setActiveView("precios"); setMobileOpen(false); }}><Tag />Precios</button>
+          <button ref={el => { navButtons.current.escenarios = el; }} data-tour="nav-escenarios" className={activeView === "escenarios" ? "active" : ""} onClick={() => { setActiveView("escenarios"); setMobileOpen(false); }}><FlaskConical />Escenarios</button>
           <span className="navGroupLabel">Datos</span>
-          <button className={`navSecondary ${activeView === "importar" ? "active" : ""}`} onClick={() => { setActiveView("importar"); setMobileOpen(false); }}><Upload size={16} />Importar base</button>
-          <button className={`navSecondary ${activeView === "observaciones" ? "active" : ""}`} onClick={() => { setActiveView("observaciones"); setMobileOpen(false); }}><ShieldAlert size={16} />Observaciones{issues.length > 0 && <span>{issues.length}</span>}</button>
+          <button ref={el => { navButtons.current.importar = el; }} className={`navSecondary ${activeView === "importar" ? "active" : ""}`} onClick={() => { setActiveView("importar"); setMobileOpen(false); }}><Upload size={16} />Importar base</button>
+          <button ref={el => { navButtons.current.observaciones = el; }} className={`navSecondary ${activeView === "observaciones" ? "active" : ""}`} onClick={() => { setActiveView("observaciones"); setMobileOpen(false); }}><ShieldAlert size={16} />Observaciones{issues.length > 0 && <span>{issues.length}</span>}</button>
         </nav>
         <div className="userCard"><div className="avatar">{displayName(user).split(" ").map(part => part[0]).slice(0, 2).join("")}</div><div><strong>{displayName(user)}</strong><small>{user.role.replace("_", " ")}</small></div><button onClick={logout} aria-label="Cerrar sesión"><LogOut size={17} /></button></div>
       </aside>
